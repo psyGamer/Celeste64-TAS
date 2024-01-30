@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Celeste64.TAS;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Celeste64;
@@ -78,18 +79,22 @@ public class Game : Module
 	public override void Startup()
 	{
 		instance = this;
-		
+
 		Time.FixedStep = true;
 		App.VSync = true;
 		App.Title = GameTitle;
 		Audio.Init();
 		Controls.Load();
 
+        TASMod.Initialize();
+
 		scenes.Push(new Startup());
 	}
 
 	public override void Shutdown()
 	{
+        TASMod.Deinitialize();
+
 		if (scenes.TryPeek(out var topScene))
 			topScene.Exited();
 
@@ -98,7 +103,7 @@ public class Game : Module
 			var it = scenes.Pop();
 			it.Disposed();
 		}
-		
+
 		scenes.Clear();
 		instance = null;
 	}
@@ -120,10 +125,12 @@ public class Game : Module
 
 	public override void Update()
 	{
+        TASMod.Update();
+
 		// update top scene
 		if (scenes.TryPeek(out var scene))
 		{
-			var pausing = 
+			var pausing =
 				transitionStep == TransitionStep.FadeIn && transition.FromPause ||
 				transitionStep == TransitionStep.FadeOut && transition.ToPause;
 
@@ -249,13 +256,13 @@ public class Game : Module
 				transition.ToBlack.Update();
 			}
 		}
-		
+
 		if (scene is not Celeste64.Startup)
 		{
 			// toggle fullsrceen
 			if ((Input.Keyboard.Alt && Input.Keyboard.Pressed(Keys.Enter)) || Input.Keyboard.Pressed(Keys.F4))
 				Save.Instance.ToggleFullscreen();
-            
+
 			// reload state
 			if (Input.Keyboard.Ctrl && Input.Keyboard.Pressed(Keys.R) && !IsMidTransition)
 			{

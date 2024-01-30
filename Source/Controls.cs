@@ -1,4 +1,6 @@
 
+using Celeste64.TAS;
+
 namespace Celeste64;
 
 public static class Controls
@@ -13,10 +15,10 @@ public static class Controls
 	public static readonly VirtualButton Confirm = new("Confirm");
 	public static readonly VirtualButton Cancel = new("Cancel");
 	public static readonly VirtualButton Pause = new("Pause");
-    
+
     public static readonly VirtualButton Freecam = new("Freecam");
     public static readonly VirtualButton SimplifiedGraphics = new("SimplifedGraphics");
-    
+
 
 	public static void Load()
 	{
@@ -44,29 +46,31 @@ public static class Controls
 		Climb.Add(0, Axes.RightTrigger, 1, .4f);
 		Climb.Add(0, Axes.LeftTrigger, 1, .4f);
 		Climb.Add(Keys.Z, Keys.V, Keys.LeftShift, Keys.RightShift);
-		
+
 		Menu.Clear();
 		Menu.AddLeftJoystick(0, 0.50f, 0.50f);
 		Menu.AddDPad(0);
 		Menu.AddArrowKeys();
-		
+
 		Confirm.Clear();
 		Confirm.Add(0, Buttons.A);
 		Confirm.Add(0, Keys.C);
-		
+
 		Cancel.Clear();
 		Cancel.Add(0, Buttons.B);
 		Cancel.Add(0, Keys.X);
-		
+
 		Pause.Clear();
 		Pause.Add(0, Buttons.Start, Buttons.Select, Buttons.Back);
 		Pause.Add(0, Keys.Enter, Keys.Escape);
-        
+
         Freecam.Clear();
         Freecam.Add(Keys.M);
-        
+
         SimplifiedGraphics.Clear();
         SimplifiedGraphics.Add(Keys.N);
+
+        TASControls.Load();
 	}
 
 	public static void Consume()
@@ -80,7 +84,7 @@ public static class Controls
 		Confirm.Consume();
 		Cancel.Consume();
 		Pause.Consume();
-		
+
 	}
 
 	private static readonly Dictionary<Gamepads, Dictionary<string, string>> prompts = [];
@@ -103,7 +107,7 @@ public static class Controls
 
 		if (!list.TryGetValue(name, out var lookup))
 			list[name] = lookup = $"Controls/{GetControllerName(gamepad)}/{name}";
-		
+
 		return lookup;
 	}
 
