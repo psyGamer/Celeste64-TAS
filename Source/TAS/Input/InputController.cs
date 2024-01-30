@@ -26,6 +26,14 @@ public class InputController
     // public int CurrentFrameInInputForHud { get; private set; } // Starts at 1
     public int CurrentFrameInTas { get; private set; } // Starts at 0
 
+    public InputFrame Previous => Inputs.GetValueOrDefault(CurrentFrameInTas - 1);
+    public InputFrame Current => Inputs.GetValueOrDefault(CurrentFrameInTas);
+    public InputFrame Next => Inputs.GetValueOrDefault(CurrentFrameInTas + 1);
+    public List<Command>? CurrentCommands => Commands.GetValueOrDefault(CurrentFrameInTas);
+
+    public bool CanPlayback => CurrentFrameInTas < Inputs.Count;
+    public bool NeedsToWait => false; // TODO Manager.IsLoading();
+
     private static readonly string DefaultTasFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Celeste64.tas");
 
     private static string studioTasFilePath = string.Empty;
@@ -90,6 +98,47 @@ public class InputController
         }
 
         // CurrentFrameInTas = Math.Min(Inputs.Count, CurrentFrameInTas);
+    }
+
+    public void AdvanceFrame(out bool canPlayback) {
+        RefreshInputs();
+
+        canPlayback = CanPlayback;
+
+        if (NeedsToWait) {
+            return;
+        }
+
+        if (CurrentCommands != null) {
+            foreach (var command in CurrentCommands) {
+                if (command.Attribute.ExecuteTiming.Has(ExecuteTiming.Runtime) /*&&
+                    (!EnforceLegalCommand.EnabledWhenRunning || command.Attribute.LegalInMainGame)*/) {
+                    command.Invoke();
+                }
+            }
+        }
+
+        if (!CanPlayback) {
+            return;
+        }
+
+        // ExportGameInfo.ExportInfo();
+        // StunPauseCommand.UpdateSimulateSkipInput();
+        // InputHelper.FeedInputs(Current);
+
+        if (CurrentFrameInInput == 0 || Current.Line == Previous.Line) {
+            CurrentFrameInInput++;
+        } else {
+            CurrentFrameInInput = 1;
+        }
+
+        // if (CurrentFrameInInputForHud == 0 || Current == Previous) {
+        //     CurrentFrameInInputForHud++;
+        // } else {
+        //     CurrentFrameInInputForHud = 1;
+        // }
+
+        CurrentFrameInTas++;
     }
 
     // studioLine starts at 0, startLine starts at 1;

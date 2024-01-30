@@ -35,4 +35,15 @@ public class Manager
         AttributeUtils.Invoke<DisableRunAttribute>();
         Controller.Stop();
     }
+
+    public static void Update()
+    {
+        if (Running)
+        {
+            Controller.AdvanceFrame(out bool canPlayback);
+            if (!canPlayback) {
+                DisableRun();
+            }
+        }
+    }
 }

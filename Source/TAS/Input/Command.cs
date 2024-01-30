@@ -76,9 +76,9 @@ public class Command
                 Parsing = false;
             }
 
-            if (inputController.Commands.TryGetValue(frame, out var commands))
+            if (!inputController.Commands.TryGetValue(frame, out var commands))
                 inputController.Commands[frame] = commands = [];
-            commands!.Add(command);
+            commands.Add(command);
 
             return true;
         }
@@ -115,10 +115,10 @@ public class Command
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 public class CommandAttribute(string name) : Attribute
 {
-    public readonly string Name = name;
-    public readonly bool LegalInFullGame = true;
-    public readonly ExecuteTiming ExecuteTiming = ExecuteTiming.Runtime;
-    public readonly string[] Aliases = [];
+    public string Name = name;
+    public bool LegalInFullGame = true;
+    public ExecuteTiming ExecuteTiming = ExecuteTiming.Runtime;
+    public string[] Aliases = [];
 
     private static readonly Dictionary<CommandAttribute, MethodInfo> MethodInfos = new();
 

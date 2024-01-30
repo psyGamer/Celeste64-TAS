@@ -23,5 +23,7 @@ public class TASMod
             else
                 Manager.EnableRun();
         }
+
+        Manager.Update();
     }
 }
