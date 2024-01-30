@@ -13,17 +13,21 @@ public static class Controls
 	public static readonly VirtualButton Confirm = new("Confirm");
 	public static readonly VirtualButton Cancel = new("Cancel");
 	public static readonly VirtualButton Pause = new("Pause");
+    
+    public static readonly VirtualButton Freecam = new("Freecam");
 
 	public static void Load()
 	{
 		Move.Clear();
 		Move.AddLeftJoystick(0);
 		Move.AddDPad(0);
-		Move.AddArrowKeys();
+		// Move.AddArrowKeys();
+        Move.Add(Keys.A, Keys.D, Keys.W, Keys.S);
 
 		Camera.Clear();
 		Camera.AddRightJoystick(0, 0.50f, 0.70f);
-		Camera.Add(Keys.A, Keys.D, Keys.W, Keys.S);
+		// Camera.Add(Keys.A, Keys.D, Keys.W, Keys.S);
+        Camera.AddArrowKeys();
 
 		Jump.Clear();
 		Jump.Add(0, Buttons.A, Buttons.Y);
@@ -55,6 +59,9 @@ public static class Controls
 		Pause.Clear();
 		Pause.Add(0, Buttons.Start, Buttons.Select, Buttons.Back);
 		Pause.Add(0, Keys.Enter, Keys.Escape);
+        
+        Freecam.Clear();
+        Freecam.Add(Keys.M);
 	}
 
 	public static void Consume()

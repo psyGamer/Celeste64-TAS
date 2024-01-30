@@ -65,6 +65,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private const float FeatherDuration = 2.2f;
 	private const float FeatherExitXYMult = .5f;
 	private const float FeatherExitZSpeed = 60;
+    
+    private const float FreecamRotateSpeed = 0.5f;
+    private const float FreecamZoomSpeed = 5.0f;
+    private const float FreecamMoveSpeed = 3.0f;
 
 	static private readonly Color CNormal = 0xdb2c00;
 	static private readonly Color CNoDash = 0x6ec0ff;
@@ -137,7 +141,11 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Vec2 targetFacing = Vec2.UnitY;
 	private Vec3 cameraTargetForward = new(0, 1, 0);
 	private float cameraTargetDistance = 0.50f;
+    
+    private Vec3 freecamPosition;
     private Vec2 freecamRotation;
+    private float freecamDistance = 50.0f;
+    
 	private readonly StateMachine<States, Events> stateMachine;
 
 	private record struct CameraOverride(Vec3 Position, Vec3 LookAt);
@@ -259,23 +267,55 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		GetCameraTarget(out var orig, out var target, out _);
 		World.Camera.LookAt = target;
 		World.Camera.Position = orig;
+        
+        freecamPosition = Position;
 	}
 
 	public override void Update()
 	{
-        if (Input.Mouse.Down(MouseButtons.Left)) { 
-            freecamRotation.X += World.MouseDelta.X * Time.Delta;
-            freecamRotation.Y += World.MouseDelta.Y * Time.Delta;
+        if (Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free)
+        {
+            // Freecam rotation
+            if (Input.Mouse.Down(MouseButtons.Left)) { 
+                freecamRotation.X += World.MouseDelta.X * Time.Delta * FreecamRotateSpeed;
+                freecamRotation.Y += World.MouseDelta.Y * Time.Delta * FreecamRotateSpeed;
+                freecamRotation.X %= 360.0f * Calc.DegToRad; 
+                freecamRotation.Y = Math.Clamp(freecamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
+            }
+            // Freecam zoom
+            freecamDistance -= Input.Mouse.Wheel.Y * FreecamZoomSpeed;
+            // Hide cursor while dragging camera
         }
-        // While cursor while dragging camera
-        App.MouseVisible = !Input.Mouse.Down(MouseButtons.Left);
 
-		// only update camera if not dead
+        if (Save.Instance.Freecam == Save.FreecamMode.Free)
+        {
+            // Freecam movement
+            var cameraForward = new Vec2(
+                MathF.Sin(freecamRotation.X),
+                MathF.Cos(freecamRotation.X));
+            var cameraRight = new Vec2(
+                MathF.Sin(freecamRotation.X - Calc.HalfPI),
+                MathF.Cos(freecamRotation.X - Calc.HalfPI));
+            freecamPosition.X -= Controls.Move.Value.Y * cameraForward.X * FreecamMoveSpeed;
+            freecamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * FreecamMoveSpeed;
+            freecamPosition.X -= Controls.Move.Value.X * cameraRight.X * FreecamMoveSpeed;
+            freecamPosition.Y -= Controls.Move.Value.X * cameraRight.Y * FreecamMoveSpeed;
+            if (Input.Keyboard.Down(Keys.Space))
+                freecamPosition.Z += FreecamMoveSpeed;
+            if (Input.Keyboard.Down(Keys.LeftControl))
+                freecamPosition.Z -= FreecamMoveSpeed;
+        }
+        
+        App.MouseVisible = !(Input.Mouse.Down(MouseButtons.Left) &&
+                             Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free);
+        
+        // Dont run any player logic while in freecam
+        if (Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
+
+		// only update camera if not dead and not in freecam
 		if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead && 
 			stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
 		{
-            Log.Info($"Delta: {World.MouseDelta}");
-            
 			// Rotate Camera
 			{
 				var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
@@ -301,7 +341,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		}
 
 		// don't do anything if dead
-		if (stateMachine.State == States.Respawn || stateMachine.State == States.Dead || stateMachine.State == States.Cutscene)
+		if (stateMachine.State is States.Respawn or States.Dead or States.Cutscene)
 		{
 			stateMachine.Update();
 			return;
@@ -448,14 +488,26 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			}
 		}
 
-        if (true) { // Freecam
-            World.Camera.LookAt = Position;
+        if (Save.Instance.Freecam == Save.FreecamMode.Free)
+        {
             var forward = new Vec3(
                 MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
                 MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
                 MathF.Sin(-freecamRotation.Y));
-            World.Camera.Position = Position - forward * 50.0f;
-        } else {
+            World.Camera.Position = freecamPosition;
+            World.Camera.LookAt = freecamPosition + forward;
+        } 
+        else if (Save.Instance.Freecam == Save.FreecamMode.Orbit)
+        {
+            var forward = new Vec3(
+                MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+                MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+                MathF.Sin(-freecamRotation.Y));
+            World.Camera.LookAt = Position;
+            World.Camera.Position = Position - forward * Math.Max(10.0f, freecamDistance);
+        } 
+        else 
+        {
 		    // update camera origin position
 		    {
 			    float ZPad = stateMachine.State == States.Climbing ? 0 : 8;

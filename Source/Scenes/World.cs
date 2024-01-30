@@ -37,6 +37,7 @@ public class World : Scene
 	private AudioHandle pauseSnapshot;
     
     // Used for mouse offset
+    private Vec2 nextMousePosition;
     private Vec2 prevMousePosition;
     public Vec2 MouseDelta => Input.Mouse.Position - prevMousePosition;
 	
@@ -269,6 +270,9 @@ public class World : Scene
 	public override void Update()
 	{
 		debugUpdTimer.Restart();
+        
+        prevMousePosition = nextMousePosition;
+        nextMousePosition = Input.Mouse.Position;
 
 		// update audio
 		Audio.SetListener(Camera);
@@ -364,9 +368,6 @@ public class World : Scene
 				pauseMenu.Update();
 		}
         
-        // update prev mouse position
-        prevMousePosition = Input.Mouse.Position;
-
 		debugUpdTimer.Stop();
 	}
 

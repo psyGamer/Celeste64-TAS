@@ -30,6 +30,11 @@ public class Save
 		public int IncFlag(string name) 
 			=> Flags[name] = GetFlag(name) + 1;
 	}
+    
+    public enum FreecamMode
+    {
+        Disabled, Orbit, Free,
+    }
 
 	public static Save Instance = new();
 
@@ -72,6 +77,8 @@ public class Save
 	/// Records for each level
 	/// </summary>
 	public List<LevelRecord> Records { get; set; } = [];
+    
+    public FreecamMode Freecam { get; set; } = FreecamMode.Disabled;
 
 	/// <summary>
 	/// Finds the record associated with a specific level, or adds it if not found
