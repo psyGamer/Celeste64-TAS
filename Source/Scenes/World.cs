@@ -321,12 +321,8 @@ public class World : Scene
             Save.Instance.SyncSettings();
             
             if (Save.Instance.SimplifiedGraphics) {
-                Game.Width = Game.HDGameWidth;
-                Game.Height = Game.HDGameHeight;
                 Camera.FarPlane = 8000;
             } else {
-                Game.Width = Game.GameWidth;
-                Game.Height = Game.GameHeight;
                 Camera.FarPlane = 800;
             }
             
@@ -898,7 +894,7 @@ public class World : Scene
 			// apply post fx
 			postMaterial.SetShader(Assets.Shaders["Edge"]);
 			postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
-			postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
+			postMaterial.Set("u_pixel", new Vec2(1.0f / Game.GameWidth, 1.0f / Game.GameHeight));
 			postMaterial.Set("u_edge", new Color(0x110d33));
 			batch.PushMaterial(postMaterial);
 			batch.Image(Camera.Target.Attachments[0], Color.White);

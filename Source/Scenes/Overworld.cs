@@ -3,13 +3,15 @@ namespace Celeste64;
 
 public class Overworld : Scene
 {
-	public static int CardWidth => (int)(480 * Game.RelativeScale);
-	public static int CardHeight => (int)(320 * Game.RelativeScale);
+	public const int CardWidth = 480;
+	public const int CardHeight = 320;
 
 	public class Entry
 	{
 		public readonly LevelInfo Level;
-		public readonly Target Target;
+		public Target Target => Save.Instance.SimplifiedGraphics ? HDTarget : GameTarget;
+        private readonly Target GameTarget;
+        public readonly Target HDTarget;
 		public readonly Subtexture Image;
 		public readonly Menu Menu;
 		public readonly bool Complete = false;
@@ -20,7 +22,8 @@ public class Overworld : Scene
 		public Entry(LevelInfo level)
 		{
 			Level = level;
-			Target = new Target(CardWidth, CardHeight);
+            GameTarget = new Target((int)(CardWidth * Game.GameRelativeScale), (int)(CardHeight * Game.GameRelativeScale));
+            HDTarget = new Target((int)(CardWidth * Game.HDRelativeScale), (int)(CardHeight * Game.HDRelativeScale));
 			Image = new(Assets.Textures[level.Preview]);
 			Menu = new();
 			Menu.UpSound = Sfx.main_menu_roll_up;
@@ -64,7 +67,7 @@ public class Overworld : Scene
 						new Subtexture(texture), 
 						bounds.BottomRight - new Vec2(50, 0), 
 						new Vec2(texture.Width / 2, texture.Height), 
-						Vec2.One * 0.50f, 0, Color.White);
+						Vec2.One * 0.50f * Game.RelativeScale, 0, Color.White);
 				}
 
 				batch.PushMatrix(Matrix3x2.CreateScale(2.0f) * Matrix3x2.CreateTranslation(bounds.BottomLeft + new Vec2(Padding, -Padding)));
@@ -145,8 +148,8 @@ public class Overworld : Scene
 		foreach (var level in Assets.Levels)
 			entries.Add(new(level));
 
-		var cardWidth = CardWidth / 6.0f / Game.RelativeScale;
-		var cardHeight = CardHeight / 6.0f / Game.RelativeScale;
+		var cardWidth = CardWidth / 6.0f;
+		var cardHeight = CardHeight / 6.0f;
 
 		mesh.SetVertices<SpriteVertex>([
 			new(new Vec3(-cardWidth, 0, -cardHeight) / 2, new Vec2(0, 0), Color.White),
