@@ -320,10 +320,15 @@ public class World : Scene
             Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
             Save.Instance.SyncSettings();
             
-            if (Save.Instance.SimplifiedGraphics)
+            if (Save.Instance.SimplifiedGraphics) {
+                Game.Width = Game.HDGameWidth;
+                Game.Height = Game.HDGameHeight;
                 Camera.FarPlane = 8000;
-            else
+            } else {
+                Game.Width = Game.GameWidth;
+                Game.Height = Game.GameHeight;
                 Camera.FarPlane = 800;
+            }
             
             foreach(var actor in Actors)
             {
@@ -881,7 +886,7 @@ public class World : Scene
 		// perform post processing effects
 		if (Camera.Target != null)
 		{
-			if (postTarget == null || postTarget.Width < Camera.Target.Width || postTarget.Height < Camera.Target.Height)
+			if (postTarget == null || postTarget.Width != Camera.Target.Width || postTarget.Height != Camera.Target.Height)
 			{
 				postTarget?.Dispose();
 				postTarget = new(Camera.Target.Width, Camera.Target.Height);

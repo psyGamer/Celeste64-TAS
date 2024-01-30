@@ -37,21 +37,27 @@ public class Game : Module
 
 	public const string GamePath = "Celeste64";
 	public const string GameTitle = "Celeste 64: Fragments of the Mountain";
-	public const int Width = 640;
-	public const int Height = 360;
+	public const int GameWidth = 640;
+	public const int GameHeight = 360;
+    public const int HDGameWidth = 1920;
+    public const int HDGameHeight = 1080;
+    public static int Width = GameWidth;
+    public static int Height = GameHeight;
 	public static readonly Version Version = typeof(Game).Assembly.GetName().Version!;
 	public static readonly string VersionString = $"v.{Version.Major}.{Version.Minor}.{Version.Build}";
 
 	/// <summary>
 	/// Used by various rendering elements to proportionally scale if you change the default game resolution
 	/// </summary>
-	public const float RelativeScale = Height / 360.0f;
+	public static float RelativeScale => Height / 360.0f;
 
 	private static Game? instance;
 	public static Game Instance => instance ?? throw new Exception("Game isn't running");
 
 	private readonly Stack<Scene> scenes = new();
-	private readonly Target target = new(Width, Height, [TextureFormat.Color, TextureFormat.Depth24Stencil8]);
+	private readonly Target gameTarget = new(GameWidth, GameHeight, [TextureFormat.Color, TextureFormat.Depth24Stencil8]);
+    private readonly Target hdTarget = new(HDGameWidth, HDGameHeight, [TextureFormat.Color, TextureFormat.Depth24Stencil8]);
+    private Target target => Save.Instance.SimplifiedGraphics ? hdTarget : gameTarget;
 	private readonly Batcher batcher = new();
 	private Transition transition;
 	private TransitionStep transitionStep = TransitionStep.None;

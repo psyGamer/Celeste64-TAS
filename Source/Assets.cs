@@ -9,7 +9,7 @@ namespace Celeste64;
 
 public static class Assets
 {
-	public const float FontSize = Game.RelativeScale * 16;
+	public static float FontSize => Game.RelativeScale * 16;
 	public const string AssetFolder = "Content";
 
 	private static string? contentPath = null;

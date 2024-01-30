@@ -3,8 +3,8 @@ namespace Celeste64;
 
 public class Overworld : Scene
 {
-	public const int CardWidth = (int)(480 * Game.RelativeScale);
-	public const int CardHeight = (int)(320 * Game.RelativeScale);
+	public static int CardWidth => (int)(480 * Game.RelativeScale);
+	public static int CardHeight => (int)(320 * Game.RelativeScale);
 
 	public class Entry
 	{
@@ -40,7 +40,7 @@ public class Overworld : Scene
 
 		public void Redraw(Batcher batch, float shine)
 		{
-			const float Padding = 16 * Game.RelativeScale;
+			float Padding = 16 * Game.RelativeScale;
 
 			Target.Clear(Color.Transparent);
 			batch.SetSampler(new(TextureFilter.Linear, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
