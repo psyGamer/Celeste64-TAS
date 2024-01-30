@@ -15,6 +15,8 @@ public static class Controls
 	public static readonly VirtualButton Pause = new("Pause");
     
     public static readonly VirtualButton Freecam = new("Freecam");
+    public static readonly VirtualButton SimplifiedGraphics = new("SimplifedGraphics");
+    
 
 	public static void Load()
 	{
@@ -62,6 +64,9 @@ public static class Controls
         
         Freecam.Clear();
         Freecam.Add(Keys.M);
+        
+        SimplifiedGraphics.Clear();
+        SimplifiedGraphics.Add(Keys.N);
 	}
 
 	public static void Consume()

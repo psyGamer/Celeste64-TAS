@@ -79,6 +79,8 @@ public class Save
 	public List<LevelRecord> Records { get; set; } = [];
     
     public FreecamMode Freecam { get; set; } = FreecamMode.Disabled;
+    
+    public bool SimplifiedGraphics { get; set; } = false;
 
 	/// <summary>
 	/// Finds the record associated with a specific level, or adds it if not found

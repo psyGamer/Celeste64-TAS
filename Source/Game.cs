@@ -248,19 +248,6 @@ public class Game : Module
 			if ((Input.Keyboard.Alt && Input.Keyboard.Pressed(Keys.Enter)) || Input.Keyboard.Pressed(Keys.F4))
 				Save.Instance.ToggleFullscreen();
             
-            // freecam
-            if (Controls.Freecam.Pressed)
-            {
-                Save.Instance.Freecam = Save.Instance.Freecam switch
-                {
-                    Save.FreecamMode.Disabled => Save.FreecamMode.Orbit,
-                    Save.FreecamMode.Orbit => Save.FreecamMode.Free,
-                    Save.FreecamMode.Free => Save.FreecamMode.Disabled,
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-                Save.Instance.SyncSettings();
-            }
-
 			// reload state
 			if (Input.Keyboard.Ctrl && Input.Keyboard.Pressed(Keys.R) && !IsMidTransition)
 			{

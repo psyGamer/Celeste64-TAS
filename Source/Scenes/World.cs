@@ -300,6 +300,31 @@ public class World : Scene
 
             Log.Info($"Reloaded {x} shaders in {a} actors");
         }
+        
+        // Freecam
+        if (Controls.Freecam.Pressed)
+        {
+            Save.Instance.Freecam = Save.Instance.Freecam switch
+            {
+                Save.FreecamMode.Disabled => Save.FreecamMode.Orbit,
+                Save.FreecamMode.Orbit => Save.FreecamMode.Free,
+                Save.FreecamMode.Free => Save.FreecamMode.Disabled,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            Save.Instance.SyncSettings();
+        }
+            
+        // Simplified Graphics
+        if (Controls.SimplifiedGraphics.Pressed)
+        {
+            Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
+            Save.Instance.SyncSettings();
+            
+            if (Save.Instance.SimplifiedGraphics)
+                Camera.FarPlane = 8000;
+            else
+                Camera.FarPlane = 800;
+        }
 
         prevMousePosition = nextMousePosition;
         nextMousePosition = Input.Mouse.Position;
@@ -849,20 +874,22 @@ public class World : Scene
 
 			var postCam = Camera with { Target = postTarget };
 
-			// apply post fx
-			postMaterial.SetShader(Assets.Shaders["Edge"]);
-			postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
-			postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
-			postMaterial.Set("u_edge", new Color(0x110d33));
-			batch.PushMaterial(postMaterial);
-			batch.Image(Camera.Target.Attachments[0], Color.White);
-			batch.Render(postTarget);
-			batch.Clear();
+            if (false) {
+			    // apply post fx
+			    postMaterial.SetShader(Assets.Shaders["Edge"]);
+			    postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
+			    postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
+			    postMaterial.Set("u_edge", new Color(0x110d33));
+			    batch.PushMaterial(postMaterial);
+			    batch.Image(Camera.Target.Attachments[0], Color.White);
+			    batch.Render(postTarget);
+			    batch.Clear();
 
-			// draw post back to the gameplay
-			batch.Image(postTarget, Color.White);
-			batch.Render(Camera.Target);
-			batch.Clear();
+			    // draw post back to the gameplay
+			    batch.Image(postTarget, Color.White);
+			    batch.Render(Camera.Target);
+			    batch.Clear();
+            }
 		}
 	}
 

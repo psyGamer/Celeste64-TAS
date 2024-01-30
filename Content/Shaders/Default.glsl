@@ -21,19 +21,19 @@ out vec3 v_world;
 
 void main(void)
 {
-    mat4 skinMat =
+	mat4 skinMat =
 		u_jointMult * (
-        a_weight.x * u_jointMat[int(a_joint.x)] +
-        a_weight.y * u_jointMat[int(a_joint.y)] +
-        a_weight.z * u_jointMat[int(a_joint.z)] +
-        a_weight.w * u_jointMat[int(a_joint.w)]);
+		a_weight.x * u_jointMat[int(a_joint.x)] +
+		a_weight.y * u_jointMat[int(a_joint.y)] +
+		a_weight.z * u_jointMat[int(a_joint.z)] +
+		a_weight.w * u_jointMat[int(a_joint.w)]);
 
-    mat4 skinRes = mat4(1.0) * (1.0 - u_jointMult) + skinMat;
+	mat4 skinRes = mat4(1.0) * (1.0 - u_jointMult) + skinMat;
 
 	gl_Position = u_mvp * skinRes * vec4(a_position, 1.0);
 
 	v_tex = a_tex;
-    v_color = a_color;
+	v_color = a_color;
 	v_normal = TransformNormal(a_normal, u_model);
 	v_world = vec3(u_model * vec4(a_position, 1.0));
 }
@@ -90,7 +90,8 @@ void main(void)
 	col = mix(col, u_silhouette_color.rgb, u_silhouette);
 
 	// fade bottom to white
-	col = mix(col, u_vertical_fog_color.rgb * src.a, fall);
+	//col = mix(col, u_vertical_fog_color.rgb * src.a, fall);
 
-	o_color = vec4(col, src.a) * fade;
+	o_color = vec4(col, src.a);
+	//o_color = vec4(col, src.a) * fade;
 }
