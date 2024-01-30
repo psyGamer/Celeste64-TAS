@@ -195,6 +195,21 @@ public static class Assets
 
 		Log.Info($"Loaded Assets in {timer.ElapsedMilliseconds}ms");
 	}
+    
+    public static void ReloadShaders()
+    {
+        Shaders.Clear();
+        
+        var shadersPath = Path.Join(ContentPath, "Shaders");
+        foreach (var file in Directory.EnumerateFiles(shadersPath, "*.glsl"))
+        {
+            if (LoadShader(file) is Shader shader)
+            {
+                shader.Name = GetResourceName(shadersPath, file);
+                Shaders[shader.Name] = shader;
+            }
+        }
+    }
 
 	private static string GetResourceName(string contentFolder, string path)
 	{

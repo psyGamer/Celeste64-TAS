@@ -271,6 +271,36 @@ public class World : Scene
 	{
 		debugUpdTimer.Restart();
         
+        // Reload shaders
+        if (Input.Keyboard.Pressed(Keys.F5)) {
+            Assets.ReloadShaders();
+            
+            // Can't use material.SetShader, since that causes issues
+            var m_set_Shader = typeof(Material).GetProperty("Shader")?.GetSetMethod(true) 
+                               ?? throw new Exception("Material is missing Shader property");
+            
+            int x = 0, a = 0;
+            foreach(var actor in Actors)
+            {
+                var fields = actor.GetType().GetFields()
+                    .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
+                a++;
+                
+                foreach (var field in fields)
+                {
+                    var model = (Model)field.GetValue(actor)!;
+                    foreach (var material in model.Materials)
+                    {
+                        if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
+                        m_set_Shader.Invoke(material, [Assets.Shaders[material.Shader.Name]]);
+                        x++;
+                    }
+                }
+            }
+
+            Log.Info($"Reloaded {x} shaders in {a} actors");
+        }
+
         prevMousePosition = nextMousePosition;
         nextMousePosition = Input.Mouse.Position;
 
