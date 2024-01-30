@@ -53,6 +53,7 @@ uniform vec4      u_silhouette_color;
 uniform float     u_time;
 uniform vec4      u_vertical_fog_color;
 uniform float     u_cutout;
+uniform float     u_simplified;
 
 in vec2 v_tex;
 in vec3 v_normal;
@@ -89,9 +90,9 @@ void main(void)
 	// passthrough mode
 	col = mix(col, u_silhouette_color.rgb, u_silhouette);
 
-	// fade bottom to white
-	//col = mix(col, u_vertical_fog_color.rgb * src.a, fall);
+	// fade bottom to white (only if u_simplified == 0.0f)
+	col = mix(col, u_vertical_fog_color.rgb * src.a, fall * (1.0f - u_simplified));
 
-	o_color = vec4(col, src.a);
-	//o_color = vec4(col, src.a) * fade;
+    // only fade if u_simplified == 0.0f
+	o_color = vec4(col, src.a) * max(fade, u_simplified);
 }

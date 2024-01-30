@@ -324,6 +324,22 @@ public class World : Scene
                 Camera.FarPlane = 8000;
             else
                 Camera.FarPlane = 800;
+            
+            foreach(var actor in Actors)
+            {
+                var fields = actor.GetType().GetFields()
+                    .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
+                
+                foreach (var field in fields)
+                {
+                    var model = (Model)field.GetValue(actor)!;
+                    foreach (var material in model.Materials)
+                    {
+                        if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
+                        material.Simplified = Save.Instance.SimplifiedGraphics;
+                    }
+                }
+            }
         }
 
         prevMousePosition = nextMousePosition;
@@ -874,22 +890,20 @@ public class World : Scene
 
 			var postCam = Camera with { Target = postTarget };
 
-            if (false) {
-			    // apply post fx
-			    postMaterial.SetShader(Assets.Shaders["Edge"]);
-			    postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
-			    postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
-			    postMaterial.Set("u_edge", new Color(0x110d33));
-			    batch.PushMaterial(postMaterial);
-			    batch.Image(Camera.Target.Attachments[0], Color.White);
-			    batch.Render(postTarget);
-			    batch.Clear();
+			// apply post fx
+			postMaterial.SetShader(Assets.Shaders["Edge"]);
+			postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
+			postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
+			postMaterial.Set("u_edge", new Color(0x110d33));
+			batch.PushMaterial(postMaterial);
+			batch.Image(Camera.Target.Attachments[0], Color.White);
+			batch.Render(postTarget);
+			batch.Clear();
 
-			    // draw post back to the gameplay
-			    batch.Image(postTarget, Color.White);
-			    batch.Render(Camera.Target);
-			    batch.Clear();
-            }
+			// draw post back to the gameplay
+			batch.Image(postTarget, Color.White);
+			batch.Render(Camera.Target);
+			batch.Clear();
 		}
 	}
 

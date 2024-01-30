@@ -21,6 +21,7 @@ public class DefaultMaterial : Material
     private float time;
     private Vec3 sun;
     private Color verticalFogColor;
+    private bool simplified;
 
     public DefaultMaterial(Texture? texture = null)
 		: base(Assets.Shaders["Default"])
@@ -193,6 +194,20 @@ public class DefaultMaterial : Material
                 time = value;
                 if (Shader?.Has("u_time") ?? false)
                     Set("u_time", value);
+            }
+        }
+    }
+    
+    public bool Simplified
+    {
+        get => simplified;
+        set
+        {
+            if (simplified != value)
+            {
+                simplified = value;
+                if (Shader?.Has("u_simplified") ?? false)
+                    Set("u_simplified", value ? 1.0f : 0.0f);
             }
         }
     }
