@@ -137,6 +137,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Vec2 targetFacing = Vec2.UnitY;
 	private Vec3 cameraTargetForward = new(0, 1, 0);
 	private float cameraTargetDistance = 0.50f;
+    private Vec2 freecamRotation;
 	private readonly StateMachine<States, Events> stateMachine;
 
 	private record struct CameraOverride(Vec3 Position, Vec3 LookAt);
@@ -262,10 +263,19 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 	public override void Update()
 	{
+        if (Input.Mouse.Down(MouseButtons.Left)) { 
+            freecamRotation.X += World.MouseDelta.X * Time.Delta;
+            freecamRotation.Y += World.MouseDelta.Y * Time.Delta;
+        }
+        // While cursor while dragging camera
+        App.MouseVisible = !Input.Mouse.Down(MouseButtons.Left);
+
 		// only update camera if not dead
 		if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead && 
 			stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
 		{
+            Log.Info($"Delta: {World.MouseDelta}");
+            
 			// Rotate Camera
 			{
 				var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
@@ -438,47 +448,56 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			}
 		}
 
-		// update camera origin position
-		{
-			float ZPad = stateMachine.State == States.Climbing ? 0 : 8;
-			cameraOriginPos.X = Position.X;
-			cameraOriginPos.Y = Position.Y;
+        if (true) { // Freecam
+            World.Camera.LookAt = Position;
+            var forward = new Vec3(
+                MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+                MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+                MathF.Sin(-freecamRotation.Y));
+            World.Camera.Position = Position - forward * 50.0f;
+        } else {
+		    // update camera origin position
+		    {
+			    float ZPad = stateMachine.State == States.Climbing ? 0 : 8;
+			    cameraOriginPos.X = Position.X;
+			    cameraOriginPos.Y = Position.Y;
 
-			float targetZ;
-			if (onGround)
-				targetZ = Position.Z;
-			else if (Position.Z < cameraOriginPos.Z)
-				targetZ = Position.Z;
-			else if (Position.Z > cameraOriginPos.Z + ZPad)
-				targetZ = Position.Z - ZPad;
-			else
-				targetZ = cameraOriginPos.Z;
+			    float targetZ;
+			    if (onGround)
+				    targetZ = Position.Z;
+			    else if (Position.Z < cameraOriginPos.Z)
+				    targetZ = Position.Z;
+			    else if (Position.Z > cameraOriginPos.Z + ZPad)
+				    targetZ = Position.Z - ZPad;
+			    else
+				    targetZ = cameraOriginPos.Z;
 
-			if (cameraOriginPos.Z != targetZ)
-				cameraOriginPos.Z += (targetZ - cameraOriginPos.Z) * (1 - MathF.Pow(.001f, Time.Delta));
-		}
+			    if (cameraOriginPos.Z != targetZ)
+				    cameraOriginPos.Z += (targetZ - cameraOriginPos.Z) * (1 - MathF.Pow(.001f, Time.Delta));
+		    }
 
-		// update camera position
-		{
-			Vec3 lookAt, cameraPos;
+		    // update camera position
+            {
+			    Vec3 lookAt, cameraPos;
 
-			if (cameraOverride.HasValue)
-			{
-				lookAt = cameraOverride.Value.LookAt;
-				cameraPos = cameraOverride.Value.Position;
-			}
-			else
-			{
-				GetCameraTarget(out lookAt, out cameraPos, out _);
-			}
+			    if (cameraOverride.HasValue)
+			    {
+				    lookAt = cameraOverride.Value.LookAt;
+				    cameraPos = cameraOverride.Value.Position;
+			    }
+			    else
+			    {
+				    GetCameraTarget(out lookAt, out cameraPos, out _);
+			    }
 
-			World.Camera.Position += (cameraPos - World.Camera.Position) * (1 - MathF.Pow(0.01f, Time.Delta));
-			World.Camera.LookAt = lookAt;
+			    World.Camera.Position += (cameraPos - World.Camera.Position) * (1 - MathF.Pow(0.01f, Time.Delta));
+			    World.Camera.LookAt = lookAt;
 
-			float targetFOV = Calc.ClampedMap(velocity.XY().Length(), MaxSpeed * 1.2f, 120, 1, 1.2f);
+			    float targetFOV = Calc.ClampedMap(velocity.XY().Length(), MaxSpeed * 1.2f, 120, 1, 1.2f);
 
-			World.Camera.FOVMultiplier = Calc.Approach(World.Camera.FOVMultiplier, targetFOV, Time.Delta / 4);
-		}
+			    World.Camera.FOVMultiplier = Calc.Approach(World.Camera.FOVMultiplier, targetFOV, Time.Delta / 4);
+		    }
+        }
 
 		// update model
 		{

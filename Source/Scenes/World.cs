@@ -35,6 +35,10 @@ public class World : Scene
 	// Pause Menu, only drawn when actually paused
 	private readonly Menu pauseMenu = new();
 	private AudioHandle pauseSnapshot;
+    
+    // Used for mouse offset
+    private Vec2 prevMousePosition;
+    public Vec2 MouseDelta => Input.Mouse.Position - prevMousePosition;
 	
 	// makes the Strawberry UI wiggle when one is collected
 	private float strawbCounterWiggle = 0;
@@ -268,7 +272,7 @@ public class World : Scene
 
 		// update audio
 		Audio.SetListener(Camera);
-
+        
 		// increment playtime (if not in the ending area)
 		if (!IsInEndingArea)
 		{
@@ -290,7 +294,7 @@ public class World : Scene
 			else
 				Calc.Approach(ref strawbCounterWiggle, 0, Time.Delta / .6f);
 		}
-
+        
 		// toggle debug draw
 		if (Input.Keyboard.Pressed(Keys.F1))
 			DebugDraw = !DebugDraw;
@@ -359,6 +363,9 @@ public class World : Scene
 			else
 				pauseMenu.Update();
 		}
+        
+        // update prev mouse position
+        prevMousePosition = Input.Mouse.Position;
 
 		debugUpdTimer.Stop();
 	}
