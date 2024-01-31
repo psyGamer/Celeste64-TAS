@@ -13,12 +13,13 @@ public static class Manager
 {
     public enum State
     {
-        Disabled, Enabled, FrameStepping,
+        Disabled,
+        Running, Paused, FrameAdvance,
     }
 
-    public static bool Running => CurrState is State.Enabled or State.FrameStepping;
-    private static State CurrState;
-    public static bool FrameStepNextFrame = false; // Flag to frame advance 1 frame
+    public static bool Running => CurrState != State.Disabled;
+    private static State CurrState, NextState;
+    private static bool FrameStepNextFrame = false; // Flag to frame advance 1 frame
 
     public static readonly InputController Controller = new();
 
@@ -32,7 +33,8 @@ public static class Manager
     {
         Log.Info($"Starting TAS: {InputController.TasFilePath}");
 
-        CurrState = State.Enabled;
+        CurrState = State.Running;
+        NextState = State.Running;
         AttributeUtils.Invoke<EnableRunAttribute>();
         Controller.Stop();
         Controller.Clear();
@@ -47,6 +49,7 @@ public static class Manager
         Log.Info("Stopping TAS");
 
         CurrState = State.Disabled;
+        NextState = State.Disabled;
         FrameStepNextFrame = false;
         AttributeUtils.Invoke<DisableRunAttribute>();
         Controller.Stop();
@@ -54,12 +57,13 @@ public static class Manager
 
     public static void Update()
     {
+        CurrState = NextState;
+
         if (!Running) return;
 
         if (!IsPaused())
         {
             Controller.AdvanceFrame(out bool canPlayback);
-            Log.Info($"Current Frame ({Controller.CurrentFrameInTas}/{Controller.Inputs.Count}): {Controller.Current} ~~ {CurrState}");
             if (!canPlayback)
             {
                 DisableRun();
@@ -68,17 +72,19 @@ public static class Manager
 
         if (TASControls.PauseResume.Pressed)
         {
-            if (CurrState == State.Enabled)
-                CurrState = State.FrameStepping;
-            else if (CurrState == State.FrameStepping)
-                CurrState = State.Enabled;
+            if (CurrState == State.Running)
+                NextState = State.Paused;
+            else if (CurrState == State.Paused)
+                NextState = State.Running;
         }
 
-        FrameStepNextFrame = false;
-        if (TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
+        if (CurrState == State.FrameAdvance)
         {
-            // Will be reset above on the next frame
-            FrameStepNextFrame = true;
+            NextState = State.Paused;
+        }
+        else if (TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
+        {
+            NextState = State.FrameAdvance;
         }
     }
 
@@ -96,11 +102,7 @@ public static class Manager
 
     public static bool IsPaused()
     {
-        if (CurrState != State.FrameStepping || IsLoading()) return false;
-
-        if (FrameStepNextFrame)
-            return false;
-
-        return true;
+        if (IsLoading()) return false;
+        return CurrState == State.Paused;
     }
 }
