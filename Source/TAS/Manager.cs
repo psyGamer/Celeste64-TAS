@@ -53,6 +53,11 @@ public class Manager
         }
     }
 
+    public static void AbortTas(string message) {
+        Log.Error(message);
+        DisableRun();
+    }
+
     public static bool IsLoading()
     {
         return !(Game.Instance.transitionStep == Game.TransitionStep.FadeIn ||

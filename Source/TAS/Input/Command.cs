@@ -108,8 +108,11 @@ public class Command
  * or when playing the file (console).
  * The args field should list formats the command takes. This is not currently used but may be implemented into Studio in the future.
  * Commands that execute can be:
- * - void Command(string[], InputController, int)
- * - void Command(string[])
+ * - void Command(string[] args, int studioLine, string filePath, int fileLine)
+ * - void Command(string[] args, int studioLine, string filePath)
+ * - void Command(string[] args, int studioLine)
+ * - void Command(string[] args, string lineText)
+ * - void Command(string[] args)
  * - void Command()
  */
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]

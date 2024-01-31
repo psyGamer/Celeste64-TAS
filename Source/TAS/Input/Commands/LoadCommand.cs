@@ -3,7 +3,7 @@ namespace Celeste64.TAS.Input.Commands;
 public class LoadCommand
 {
     [Command("Load", LegalInFullGame = false)]
-    private static void Load(string[] args)
+    private static void LoadCmd(string[] args)
     {
         var entry = new World.EntryInfo()
         {
