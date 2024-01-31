@@ -17,9 +17,8 @@ public class LoadCommand
         {
             Mode = Transition.Modes.Replace,
             Scene = () => new World(entry),
-            ToPause = true,
-            ToBlack = new AngledWipe(),
-            PerformAssetReload = true
+            ToBlack = null,
+            FromBlack = new SpotlightWipe(),
         });
     }
 }
