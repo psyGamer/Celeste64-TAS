@@ -127,6 +127,7 @@ public class Game : Module
 	public override void Update()
 	{
         TASMod.Update();
+        if (Manager.IsPaused()) return;
 
 		// update top scene
 		if (scenes.TryPeek(out var scene))

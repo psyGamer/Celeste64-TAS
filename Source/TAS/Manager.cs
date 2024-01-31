@@ -9,20 +9,30 @@ internal class EnableRunAttribute : Attribute;
 [AttributeUsage(AttributeTargets.Method)]
 internal class DisableRunAttribute : Attribute;
 
-public class Manager
+public static class Manager
 {
-    public static bool Running;
+    public enum State
+    {
+        Disabled, Enabled, FrameStepping,
+    }
+
+    public static bool Running => CurrState is State.Enabled or State.FrameStepping;
+    private static State CurrState;
+    public static bool FrameStepNextFrame = false; // Flag to frame advance 1 frame
+
     public static readonly InputController Controller = new();
 
-    static Manager() {
+    static Manager()
+    {
         AttributeUtils.CollectMethods<EnableRunAttribute>();
         AttributeUtils.CollectMethods<DisableRunAttribute>();
     }
 
-    public static void EnableRun() {
+    public static void EnableRun()
+    {
         Log.Info($"Starting TAS: {InputController.TasFilePath}");
 
-        Running = true;
+        CurrState = State.Enabled;
         AttributeUtils.Invoke<EnableRunAttribute>();
         Controller.Stop();
         Controller.Clear();
@@ -32,28 +42,48 @@ public class Manager
         // Controller.Commands.ForEach(p => Log.Info($"command {p.Value}@{p.Key}"));
     }
 
-    public static void DisableRun() {
+    public static void DisableRun()
+    {
         Log.Info("Stopping TAS");
 
-        Running = false;
+        CurrState = State.Disabled;
+        FrameStepNextFrame = false;
         AttributeUtils.Invoke<DisableRunAttribute>();
         Controller.Stop();
     }
 
     public static void Update()
     {
-        if (Running)
+        if (!Running) return;
+
+        if (!IsPaused())
         {
             Controller.AdvanceFrame(out bool canPlayback);
-            Log.Info($"Current Frame ({Controller.CurrentFrameInTas}/{Controller.Inputs.Count}): {Controller.Current}");
-            Log.Info(Game.Instance.transitionStep);
-            if (!canPlayback) {
+            Log.Info($"Current Frame ({Controller.CurrentFrameInTas}/{Controller.Inputs.Count}): {Controller.Current} ~~ {CurrState}");
+            if (!canPlayback)
+            {
                 DisableRun();
             }
         }
+
+        if (TASControls.PauseResume.Pressed)
+        {
+            if (CurrState == State.Enabled)
+                CurrState = State.FrameStepping;
+            else if (CurrState == State.FrameStepping)
+                CurrState = State.Enabled;
+        }
+
+        FrameStepNextFrame = false;
+        if (TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
+        {
+            // Will be reset above on the next frame
+            FrameStepNextFrame = true;
+        }
     }
 
-    public static void AbortTas(string message) {
+    public static void AbortTas(string message)
+    {
         Log.Error(message);
         DisableRun();
     }
@@ -62,5 +92,15 @@ public class Manager
     {
         return !(Game.Instance.transitionStep == Game.TransitionStep.FadeIn ||
                  Game.Instance.transitionStep == Game.TransitionStep.None);
+    }
+
+    public static bool IsPaused()
+    {
+        if (CurrState != State.FrameStepping || IsLoading()) return false;
+
+        if (FrameStepNextFrame)
+            return false;
+
+        return true;
     }
 }

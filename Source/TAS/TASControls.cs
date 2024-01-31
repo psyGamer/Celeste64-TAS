@@ -29,5 +29,13 @@ public static class TASControls {
     {
         StartStop.Clear();
         StartStop.Add(Keys.RightControl);
+
+        PauseResume.Clear();
+        PauseResume.Add(Keys.P);
+
+        FrameAdvance.Clear();
+        FrameAdvance.RepeatDelay = 0.25f;
+        FrameAdvance.RepeatInterval = 0.1f;
+        FrameAdvance.Add(Keys.L);
     }
 }
