@@ -124,7 +124,7 @@ public class InputController
 
         // ExportGameInfo.ExportInfo();
         // StunPauseCommand.UpdateSimulateSkipInput();
-        // InputHelper.FeedInputs(Current);
+        InputHelper.FeedInputs(Current);
 
         if (CurrentFrameInInput == 0 || Current.Line == Previous.Line) {
             CurrentFrameInInput++;
@@ -168,7 +168,12 @@ public class InputController
 
             string lineText = readLine.Trim();
 
-            Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out var _);
+            if (lineText.StartsWith('#')) continue; // Comment
+
+            if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out var _))
+            {
+                continue;
+            }
             // if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out Command command) &&
             //     command.Is("Play")) {
             //     // workaround for the play command
@@ -206,16 +211,18 @@ public class InputController
     }
 
     public void AddFrames(string line, int studioLine, int repeatIndex = 0, int repeatCount = 0, int frameOffset = 0) {
-        if (!InputFrame.TryParse(line, studioLine, Inputs.LastOrDefault(), out InputFrame inputFrame, repeatIndex, repeatCount, frameOffset)) {
+        if (!InputFrame.TryParse(line, studioLine, Inputs.LastOrDefault(), out InputFrame? inputFrame, repeatIndex, repeatCount, frameOffset)) {
             return;
         }
 
-        for (int i = 0; i < inputFrame.Frames; i++) {
-            Inputs.Add(inputFrame);
+        // Console.WriteLine($"Input {inputFrame}");
+
+        for (int i = 0; i < inputFrame.Value.Frames; i++) {
+            Inputs.Add(inputFrame.Value);
         }
 
         // LibTasHelper.WriteLibTasFrame(inputFrame);
-        initializationFrameCount += inputFrame.Frames;
+        initializationFrameCount += inputFrame.Value.Frames;
     }
 
     public void Stop() {
@@ -226,15 +233,15 @@ public class InputController
     }
 
     public void Clear() {
-        // initializationFrameCount = 0;
+        initializationFrameCount = 0;
         checksum = string.Empty;
         // savestateChecksum = string.Empty;
-        // Inputs.Clear();
+        Inputs.Clear();
         Commands.Clear();
         // FastForwards.Clear();
         // FastForwardComments.Clear();
         // Comments.Clear();
-        // UsedFiles.Clear();
+        usedFiles.Clear();
         NeedsReload = true;
         StopWatchers();
         AttributeUtils.Invoke<ClearInputsAttribute>();

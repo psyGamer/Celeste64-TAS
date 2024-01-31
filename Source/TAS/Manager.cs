@@ -25,7 +25,11 @@ public class Manager
         Running = true;
         AttributeUtils.Invoke<EnableRunAttribute>();
         Controller.Stop();
+        Controller.Clear();
         Controller.RefreshInputs();
+
+        // Controller.Inputs.ForEach(i => Log.Info($"input {i}"));
+        // Controller.Commands.ForEach(p => Log.Info($"command {p.Value}@{p.Key}"));
     }
 
     public static void DisableRun() {
@@ -41,6 +45,7 @@ public class Manager
         if (Running)
         {
             Controller.AdvanceFrame(out bool canPlayback);
+            Log.Info($"Current Frame ({Controller.CurrentFrameInTas}/{Controller.Inputs.Count}): {Controller.Current}");
             if (!canPlayback) {
                 DisableRun();
             }

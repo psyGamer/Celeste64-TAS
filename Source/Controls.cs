@@ -1,23 +1,24 @@
 
 using Celeste64.TAS;
+using Celeste64.TAS.Input;
 
 namespace Celeste64;
 
 public static class Controls
 {
-	public static readonly VirtualStick Move = new("Move", VirtualAxis.Overlaps.TakeNewer, 0.35f);
-	public static readonly VirtualStick Menu = new("Menu", VirtualAxis.Overlaps.TakeNewer, 0.35f);
-	public static readonly VirtualStick Camera = new("Camera", VirtualAxis.Overlaps.TakeNewer, 0.35f);
-	public static readonly VirtualButton Jump = new("Jump", .1f);
-	public static readonly VirtualButton Dash = new("Dash", .1f);
-	public static readonly VirtualButton Climb = new("Climb");
+	public static VirtualStick Move = new("Move", VirtualAxis.Overlaps.TakeNewer, 0.35f);
+	public static VirtualStick Menu = new("Menu", VirtualAxis.Overlaps.TakeNewer, 0.35f);
+	public static VirtualStick Camera = new("Camera", VirtualAxis.Overlaps.TakeNewer, 0.35f);
+	public static VirtualButton Jump = new("Jump", .1f);
+	public static VirtualButton Dash = new("Dash", .1f);
+	public static VirtualButton Climb = new("Climb");
 
-	public static readonly VirtualButton Confirm = new("Confirm");
-	public static readonly VirtualButton Cancel = new("Cancel");
-	public static readonly VirtualButton Pause = new("Pause");
+	public static VirtualButton Confirm = new("Confirm");
+	public static VirtualButton Cancel = new("Cancel");
+	public static VirtualButton Pause = new("Pause");
 
-    public static readonly VirtualButton Freecam = new("Freecam");
-    public static readonly VirtualButton SimplifiedGraphics = new("SimplifedGraphics");
+    public static VirtualButton Freecam = new("Freecam");
+    public static VirtualButton SimplifiedGraphics = new("SimplifedGraphics");
 
 
 	public static void Load()
@@ -71,6 +72,7 @@ public static class Controls
         SimplifiedGraphics.Add(Keys.N);
 
         TASControls.Load();
+        InputHelper.Load();
 	}
 
 	public static void Consume()
