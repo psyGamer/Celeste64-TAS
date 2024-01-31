@@ -40,5 +40,8 @@ public static class TASControls {
 
         SlowForward.Clear();
         SlowForward.Add(Keys.RightShift);
+
+        FastForward.Clear();
+        FastForward.Add(Keys.RightShift);
     }
 }

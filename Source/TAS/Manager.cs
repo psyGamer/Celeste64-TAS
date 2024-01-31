@@ -15,11 +15,13 @@ public static class Manager
     {
         Disabled,
         Running, Paused, FrameAdvance,
+        FastForward,
     }
 
     public static bool Running => CurrState != State.Disabled;
+    public static int FrameLoops => CurrState == State.FastForward ? 3 : 1;
+
     private static State CurrState, NextState;
-    private static bool FrameStepNextFrame = false; // Flag to frame advance 1 frame
 
     public static readonly InputController Controller = new();
 
@@ -50,7 +52,6 @@ public static class Manager
 
         CurrState = State.Disabled;
         NextState = State.Disabled;
-        FrameStepNextFrame = false;
         AttributeUtils.Invoke<DisableRunAttribute>();
         Controller.Stop();
     }
@@ -78,13 +79,26 @@ public static class Manager
                 NextState = State.Running;
         }
 
-        if (CurrState == State.FrameAdvance)
+        switch (CurrState)
         {
+        case State.Running:
+            if (TASControls.PauseResume.Pressed)
+                NextState = State.Paused;
+            else
+                NextState = TASControls.FastForward.Down ? State.FastForward : State.Running;
+            break;
+        case State.FastForward:
+            NextState = TASControls.FastForward.Down ? State.FastForward : State.Running;
+            break;
+        case State.FrameAdvance:
             NextState = State.Paused;
-        }
-        else if (CurrState == State.Paused && (TASControls.SlowForward.Down || TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated))
-        {
-            NextState = State.FrameAdvance;
+            break;
+        case State.Paused:
+            if (TASControls.PauseResume.Pressed)
+                NextState = State.Running;
+            else if (TASControls.SlowForward.Down || TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
+                NextState = State.FrameAdvance;
+            break;
         }
     }
 
