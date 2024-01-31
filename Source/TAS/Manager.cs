@@ -82,7 +82,7 @@ public static class Manager
         {
             NextState = State.Paused;
         }
-        else if (TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
+        else if (CurrState == State.Paused && (TASControls.SlowForward.Down || TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated))
         {
             NextState = State.FrameAdvance;
         }

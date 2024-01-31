@@ -37,5 +37,8 @@ public static class TASControls {
         FrameAdvance.RepeatDelay = 0.25f;
         FrameAdvance.RepeatInterval = 0.1f;
         FrameAdvance.Add(Keys.L);
+
+        SlowForward.Clear();
+        SlowForward.Add(Keys.RightShift);
     }
 }
