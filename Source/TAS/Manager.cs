@@ -46,9 +46,16 @@ public class Manager
         {
             Controller.AdvanceFrame(out bool canPlayback);
             Log.Info($"Current Frame ({Controller.CurrentFrameInTas}/{Controller.Inputs.Count}): {Controller.Current}");
+            Log.Info(Game.Instance.transitionStep);
             if (!canPlayback) {
                 DisableRun();
             }
         }
+    }
+
+    public static bool IsLoading()
+    {
+        return !(Game.Instance.transitionStep == Game.TransitionStep.FadeIn ||
+                 Game.Instance.transitionStep == Game.TransitionStep.None);
     }
 }

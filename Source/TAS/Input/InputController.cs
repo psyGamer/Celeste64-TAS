@@ -32,7 +32,7 @@ public class InputController
     public List<Command>? CurrentCommands => Commands.GetValueOrDefault(CurrentFrameInTas);
 
     public bool CanPlayback => CurrentFrameInTas < Inputs.Count;
-    public bool NeedsToWait => false; // TODO Manager.IsLoading();
+    public bool NeedsToWait => Manager.IsLoading();
 
     private static readonly string DefaultTasFilePath = Path.Combine(Directory.GetCurrentDirectory(), "Celeste64.tas");
 

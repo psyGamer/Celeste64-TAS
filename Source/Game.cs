@@ -27,7 +27,7 @@ public struct Transition
 
 public class Game : Module
 {
-	private enum TransitionStep
+	public enum TransitionStep // TAS: publicized
 	{
 		None,
 		FadeOut,
@@ -63,7 +63,7 @@ public class Game : Module
     private Target target => Save.Instance.SimplifiedGraphics ? hdTarget : gameTarget;
 	private readonly Batcher batcher = new();
 	private Transition transition;
-	private TransitionStep transitionStep = TransitionStep.None;
+	public TransitionStep transitionStep = TransitionStep.None; // TAS: publicized
 	private readonly FMOD.Studio.EVENT_CALLBACK audioEventCallback;
 	private int audioBeatCounter;
 
