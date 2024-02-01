@@ -10,7 +10,7 @@
         <PublishSingleFile>false</PublishSingleFile>
         <PublishTrimmed>false</PublishTrimmed>
         <Platforms>x64</Platforms>
-        <SelfContained>false</SelfContained>
+        <SelfContained>true</SelfContained>
     </PropertyGroup>
 
     <ItemGroup>

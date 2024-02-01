@@ -23,13 +23,13 @@ jobs:
         with:
           dotnet-version: '8.x'
       - name: Build Windows x86_64
-        run: dotnet publish -c Release -r win-x64 --self-contained
+        run: dotnet publish -c Release -r win-x64
       - name: Build Linux x86_64
-        run: dotnet publish -c Release -r linux-x64 --self-contained
+        run: dotnet publish -c Release -r linux-x64
       - name: Build MacOS x86_64
-        run: dotnet publish -c Release -r osx-x64 --self-contained
+        run: dotnet publish -c Release -r osx-x64
       - name: Build MacOS ARM64
-        run: dotnet publish -c Release -r osx-arm64 --self-contained
+        run: dotnet publish -c Release -r osx-arm64
       - name: Copy Content
         run: |
           cp -r Content bin/Release/net8.0/win-x64/publish
