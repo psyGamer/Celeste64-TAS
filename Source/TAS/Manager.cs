@@ -21,7 +21,7 @@ public static class Manager
     public static bool Running => CurrState != State.Disabled;
     public static int FrameLoops => CurrState == State.FastForward ? 3 : 1;
 
-    private static State CurrState, NextState;
+    public static State CurrState, NextState;
 
     public static readonly InputController Controller = new();
 

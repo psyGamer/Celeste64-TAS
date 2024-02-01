@@ -1,7 +1,7 @@
 namespace Celeste64.TAS;
 
-public static class TASControls {
-
+public static class TASControls
+{
     public static readonly VirtualButton StartStop = new("StartStop");
     public static readonly VirtualButton Restart = new("Restart");
     public static readonly VirtualButton FastForward = new("FastForward");
@@ -43,5 +43,32 @@ public static class TASControls {
 
         FastForward.Clear();
         FastForward.Add(Keys.RightShift);
+    }
+
+    public static bool IsTASControl(this VirtualButton self)
+    {
+        return
+            self == StartStop ||
+            self == Restart ||
+            self == FastForward ||
+            self == FastForwardComment ||
+            self == SlowForward ||
+            self == FrameAdvance ||
+            self == PauseResume ||
+            self == Hitboxes ||
+            self == TriggerHitboxes ||
+            self == SimplifiedGraphic ||
+            self == CenterCamera ||
+            self == LockCamera ||
+            self == SaveState ||
+            self == ClearState ||
+            self == InfoHud ||
+            self == FreeCamera ||
+            self == CameraUp ||
+            self == CameraDown ||
+            self == CameraLeft ||
+            self == CameraRight ||
+            self == CameraZoomIn ||
+            self == CameraZoomOut;
     }
 }
