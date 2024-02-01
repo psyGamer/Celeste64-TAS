@@ -68,6 +68,7 @@ public class Game : Module
 	public TransitionStep transitionStep = TransitionStep.None; // TAS: publicized
 	private readonly FMOD.Studio.EVENT_CALLBACK audioEventCallback;
 	private int audioBeatCounter;
+	private bool audioBeatCounterEvent;
 
 	public AudioHandle Ambience;
 	public AudioHandle Music;
@@ -191,10 +192,7 @@ public class Game : Module
 
 			    // perform game save between transitions
 			    if (transition.Saving)
-			    {
-				    using var stream = File.Create(Path.Join(App.UserPath, Save.FileName));
-				    Save.Serialize(stream, Save.Instance);
-			    }
+				    Save.Instance.SaveToFile();
 
 			    // perform transition
 			    switch (transition.Mode)
@@ -266,6 +264,22 @@ public class Game : Module
 				    transition.ToBlack.Update();
 			    }
 		    }
+		    else if (transitionStep == TransitionStep.None)
+		    {
+			    // handle audio beat events on main thread
+			    if (audioBeatCounterEvent)
+			    {
+				    audioBeatCounterEvent = false;
+				    audioBeatCounter++;
+
+				    if (scene is World world)
+				    {
+					    foreach (var listener in world.All<IListenToAudioCallback>())
+						    (listener as IListenToAudioCallback)?.AudioCallbackEvent(audioBeatCounter);
+				    }
+			    }
+		    }
+
 
 		    if (scene is not Celeste64.Startup)
 		    {
@@ -334,15 +348,9 @@ public class Game : Module
 
 	private FMOD.RESULT MusicTimelineCallback(FMOD.Studio.EVENT_CALLBACK_TYPE type, IntPtr _event, IntPtr parameters)
 	{
+		// notify that an audio event happend (but handle it on the main thread)
 		if (transitionStep == TransitionStep.None)
-		{
-			audioBeatCounter++;
-			if (scenes.TryPeek(out var scene) && scene is World world)
-			{
-				foreach (var listener in world.All<IListenToAudioCallback>())
-					(listener as IListenToAudioCallback)?.AudioCallbackEvent(audioBeatCounter);
-			}
-		}
+			audioBeatCounterEvent = true;
 		return FMOD.RESULT.OK;
 	}
 }

@@ -15,6 +15,7 @@ public class World : Scene
 	public EntryInfo Entry = new();
 	public readonly GridPartition<Solid> SolidGrid = new(200, 100);
 	public float GeneralTimer = 0;
+	public float DeathPlane = -100;
 
 	public readonly List<Actor> Actors = [];
 	private readonly List<Actor> adding = [];
@@ -35,14 +36,16 @@ public class World : Scene
 	// Pause Menu, only drawn when actually paused
 	private readonly Menu pauseMenu = new();
 	private AudioHandle pauseSnapshot;
-    
+
     // Used for mouse offset
     private Vec2 nextMousePosition;
     private Vec2 prevMousePosition;
     public Vec2 MouseDelta => Input.Mouse.Position - prevMousePosition;
-	
+
 	// makes the Strawberry UI wiggle when one is collected
 	private float strawbCounterWiggle = 0;
+	private float strawbCounterCooldown = 0;
+	private float strawbCounterEase = 0;
 	private int strawbCounterWas;
 
 	private bool IsInEndingArea => Get<Player>() is {} player && Overlaps<EndingArea>(player.Position);
@@ -270,22 +273,22 @@ public class World : Scene
 	public override void Update()
 	{
 		debugUpdTimer.Restart();
-        
+
         // Reload shaders
         if (Input.Keyboard.Pressed(Keys.F5)) {
             Assets.ReloadShaders();
-            
+
             // Can't use material.SetShader, since that causes issues
-            var m_set_Shader = typeof(Material).GetProperty("Shader")?.GetSetMethod(true) 
+            var m_set_Shader = typeof(Material).GetProperty("Shader")?.GetSetMethod(true)
                                ?? throw new Exception("Material is missing Shader property");
-            
+
             int x = 0, a = 0;
             foreach(var actor in Actors)
             {
                 var fields = actor.GetType().GetFields()
                     .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
                 a++;
-                
+
                 foreach (var field in fields)
                 {
                     var model = (Model)field.GetValue(actor)!;
@@ -300,7 +303,7 @@ public class World : Scene
 
             Log.Info($"Reloaded {x} shaders in {a} actors");
         }
-        
+
         // Freecam
         if (Controls.Freecam.Pressed)
         {
@@ -313,24 +316,24 @@ public class World : Scene
             };
             Save.Instance.SyncSettings();
         }
-            
+
         // Simplified Graphics
         if (Controls.SimplifiedGraphics.Pressed)
         {
             Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
             Save.Instance.SyncSettings();
-            
+
             if (Save.Instance.SimplifiedGraphics) {
                 Camera.FarPlane = 8000;
             } else {
                 Camera.FarPlane = 800;
             }
-            
+
             foreach(var actor in Actors)
             {
                 var fields = actor.GetType().GetFields()
                     .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
-                
+
                 foreach (var field in fields)
                 {
                     var model = (Model)field.GetValue(actor)!;
@@ -348,7 +351,7 @@ public class World : Scene
 
 		// update audio
 		Audio.SetListener(Camera);
-        
+
 		// increment playtime (if not in the ending area)
 		if (!IsInEndingArea)
 		{
@@ -360,21 +363,35 @@ public class World : Scene
 			Game.Instance.Music.Set("at_baddy", 1);
 		}
 
-		// wiggle strawberry counter
+		// handle strawb counter
 		{
+			// wiggle when gained
 			if (strawbCounterWas != Save.CurrentRecord.Strawberries.Count)
 			{
+				strawbCounterCooldown = 4.0f;
 				strawbCounterWiggle = 1.0f;
 				strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
 			}
 			else
 				Calc.Approach(ref strawbCounterWiggle, 0, Time.Delta / .6f);
+
+			// hold stawb for a while
+			if ((Get<Player>()?.IsStrawberryCounterVisible ?? false))
+				strawbCounterCooldown = 2.0f;
+			else
+				strawbCounterCooldown -= Time.Delta;
+
+			// ease strawb in/out
+			if (IsInEndingArea || Paused || strawbCounterCooldown > 0 || (Get<Player>()?.IsStrawberryCounterVisible ?? false))
+				strawbCounterEase = Calc.Approach(strawbCounterEase, 1, Time.Delta * 6.0f);
+			else
+				strawbCounterEase = Calc.Approach(strawbCounterEase, 0, Time.Delta * 6.0f);
 		}
-        
+
 		// toggle debug draw
 		if (Input.Keyboard.Pressed(Keys.F1))
 			DebugDraw = !DebugDraw;
-		
+
 		// normal game loop
 		if (!Paused)
 		{
@@ -439,7 +456,7 @@ public class World : Scene
 			else
 				pauseMenu.Update();
 		}
-        
+
 		debugUpdTimer.Stop();
 	}
 
@@ -485,7 +502,7 @@ public class World : Scene
 
 			if (!solid.WorldBounds.Intersects(box))
 				continue;
-				
+
 			var verts = solid.WorldVertices;
 			var faces = solid.WorldFaces;
 
@@ -502,8 +519,8 @@ public class World : Scene
 				// check against each triangle in the face
 				for (int i = 0; i < face.Indices.Count - 2; i ++)
 				{
-					if (Utils.RayIntersectsTriangle(point, direction, 
-						verts[face.Indices[0]], 
+					if (Utils.RayIntersectsTriangle(point, direction,
+						verts[face.Indices[0]],
 						verts[face.Indices[i + 1]],
 						verts[face.Indices[i + 2]], out float dist))
 					{
@@ -579,7 +596,7 @@ public class World : Scene
 							continue;
 
 						var pushout = (radius - diff.Length()) * diff.Normalized();
-						if (closestTriangleOnPlane.HasValue && pushout.LengthSquared() < 
+						if (closestTriangleOnPlane.HasValue && pushout.LengthSquared() <
 							closestTriangleOnPlane.Value.Pushout.LengthSquared())
 							continue;
 
@@ -710,7 +727,7 @@ public class World : Scene
 			foreach (var actor in All<ICastPointShadow>())
 			{
 				var alpha = (actor as ICastPointShadow)!.PointShadowAlpha;
-				if (alpha > 0 && 
+				if (alpha > 0 &&
 					Camera.Frustum.Contains(actor.WorldBounds.Conflate(actor.WorldBounds - Vec3.UnitZ * 1000)))
 					sprites.Add(Sprite.CreateShadowSprite(this, actor.Position + Vec3.UnitZ, alpha));
 			}
@@ -740,7 +757,7 @@ public class World : Scene
 			var shift = new Vec3(Camera.Position.X, Camera.Position.Y, Camera.Position.Z);
 			for (int i = 0; i < skyboxes.Count; i++)
 			{
-				skyboxes[i].Render(Camera, 
+				skyboxes[i].Render(Camera,
 				Matrix.CreateRotationZ(i * GeneralTimer * 0.01f) *
 				Matrix.CreateScale(1, 1, 0.5f) *
 				Matrix.CreateTranslation(shift), 300);
@@ -763,7 +780,7 @@ public class World : Scene
 
 		// render main models
 		RenderModels(ref state, models, ModelFlags.Default);
-		
+
 		// perform post processing effects
 		ApplyPostEffects();
 
@@ -844,14 +861,14 @@ public class World : Scene
 					at.Y += UI.IconSize + 4;
 				}
 
-				if (IsInEndingArea || Paused || (Get<Player>()?.IsStrawberryCounterVisible ?? false))
+				if (strawbCounterEase > 0)
 				{
 					var wiggle = 1 + MathF.Sin(strawbCounterWiggle * MathF.Tau * 2) * strawbCounterWiggle * .3f;
 
 					batch.PushMatrix(
-						Matrix3x2.CreateTranslation(0, -UI.IconSize / 2) * 
-						Matrix3x2.CreateScale(wiggle) * 
-						Matrix3x2.CreateTranslation(at + new Vec2(0, UI.IconSize / 2)));
+						Matrix3x2.CreateTranslation(0, -UI.IconSize / 2) *
+						Matrix3x2.CreateScale(wiggle) *
+						Matrix3x2.CreateTranslation(at + new Vec2(-60 * (1 - Ease.CubeOut(strawbCounterEase)), UI.IconSize / 2)));
 					UI.Strawberries(batch, Save.CurrentRecord.Strawberries.Count, Vec2.Zero);
 					batch.PopMatrix();
 				}
@@ -862,7 +879,7 @@ public class World : Scene
 				var scroll = -new Vec2(1.25f, 0.9f) * (float)(Time.Duration.TotalSeconds) * 0.05f;
 
 				batch.PushBlend(BlendMode.Add);
-				batch.Image(Assets.Textures["overworld/overlay"], 
+				batch.Image(Assets.Textures["overworld/overlay"],
 					bounds.TopLeft, bounds.TopRight, bounds.BottomRight, bounds.BottomLeft,
 					scroll + new Vec2(0, 0), scroll + new Vec2(1, 0), scroll + new Vec2(1, 1), scroll + new Vec2(0, 1),
 					Color.White * 0.10f);
@@ -893,9 +910,12 @@ public class World : Scene
 
 			// apply post fx
 			postMaterial.SetShader(Assets.Shaders["Edge"]);
-			postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
-			postMaterial.Set("u_pixel", new Vec2(1.0f / Game.GameWidth, 1.0f / Game.GameHeight));
-			postMaterial.Set("u_edge", new Color(0x110d33));
+            if (postMaterial.Shader?.Has("u_depth") ?? false)
+			    postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
+            if (postMaterial.Shader?.Has("u_pixel") ?? false)
+			    postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
+            if (postMaterial.Shader?.Has("u_edge") ?? false)
+			    postMaterial.Set("u_edge", new Color(0x110d33));
 			batch.PushMaterial(postMaterial);
 			batch.Image(Camera.Target.Attachments[0], Color.White);
 			batch.Render(postTarget);
