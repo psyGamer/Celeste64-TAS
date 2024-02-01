@@ -65,6 +65,17 @@ public static class Manager
         if (!IsPaused())
         {
             Controller.AdvanceFrame(out bool canPlayback);
+            Log.Info($"({Controller.CurrentFrameInInput}/{Controller.Current.Frames}) {Controller.Current} [{Controller.CurrentFrameInTas}/{Controller.Inputs.Count}]");
+
+            if (Game.Instance.scenes.TryPeek(out var scene) && scene is World world)
+            {
+                var player = world.Get<Player>();
+                if (player != null)
+                {
+                    Log.Info($"Pos: {player.Position} Vel: {player.Velocity} onGround: {player.onGround}");
+                }
+            }
+
             if (!canPlayback)
             {
                 DisableRun();

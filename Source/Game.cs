@@ -59,7 +59,7 @@ public class Game : Module
 	private static Game? instance;
 	public static Game Instance => instance ?? throw new Exception("Game isn't running");
 
-	private readonly Stack<Scene> scenes = new();
+	public readonly Stack<Scene> scenes = new(); // TAS: publicized
 	private readonly Target gameTarget = new(GameWidth, GameHeight, [TextureFormat.Color, TextureFormat.Depth24Stencil8]);
     private readonly Target hdTarget = new(HDWidth, HDHeight, [TextureFormat.Color, TextureFormat.Depth24Stencil8]);
     private Target target => Save.Instance.SimplifiedGraphics ? hdTarget : gameTarget;

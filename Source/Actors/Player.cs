@@ -140,7 +140,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Actor? climbingWallActor;
 	private Vec3 climbingWallNormal;
 
-	private bool onGround;
+	public bool onGround; // TAS: publicized
 	private Vec2 targetFacing = Vec2.UnitY;
 	private Vec3 cameraTargetForward = new(0, 1, 0);
 	private float cameraTargetDistance = 0.50f;
