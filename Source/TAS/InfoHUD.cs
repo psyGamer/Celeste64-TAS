@@ -8,12 +8,12 @@ public static class InfoHUD
 {
     public static void RenderGUI()
     {
-        ImGui.Begin("Info HUD");
+        ImGui.SetNextWindowSizeConstraints(new Vec2(200f, 200f), new Vec2(float.PositiveInfinity, float.PositiveInfinity));
+        ImGui.Begin("Info HUD", ImGuiWindowFlags.MenuBar);
 
         const int Decimals = 3;
 
-        if (ImGui.BeginMainMenuBar())
-        {
+        if (ImGui.BeginMenuBar()) {
             if (ImGui.BeginMenu("Settings"))
             {
                 bool showInputs = Save.Instance.InfoHudShowInputs;
@@ -26,7 +26,7 @@ public static class InfoHUD
                 Save.Instance.InfoHudShowWorld = showWorld;
                 ImGui.EndMenu();
             }
-            ImGui.EndMainMenuBar();
+            ImGui.EndMenuBar();
         }
 
         if (Save.Instance.InfoHudShowInputs)
@@ -89,7 +89,7 @@ public static class InfoHUD
                     statues.Add($"CanWallJump");
                 statues.Add($"St{player.stateMachine.State?.ToString() ?? string.Empty}");
 
-                ImGui.Text(string.Join("  ", statues));
+                ImGui.TextWrapped(string.Join("  ", statues));
 
                 string timerStr = (int) Save.CurrentRecord.Time.TotalHours > 0
                     ? $"{((int) Save.CurrentRecord.Time.TotalHours):00}:{Save.CurrentRecord.Time.Minutes:00}:{Save.CurrentRecord.Time.Seconds:00}:{Save.CurrentRecord.Time.Milliseconds:000}"
