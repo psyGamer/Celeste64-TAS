@@ -78,9 +78,12 @@ public class Save
 	/// </summary>
 	public List<LevelRecord> Records { get; set; } = [];
 
+    // TAS Settings
     public FreecamMode Freecam { get; set; } = FreecamMode.Disabled;
-
     public bool SimplifiedGraphics { get; set; } = false;
+    // Info HUD
+    public bool InfoHudShowInputs { get; set; } = true;
+    public bool InfoHudShowWorld { get; set; } = true;
 
 	/// <summary>
 	/// Finds the record associated with a specific level, or adds it if not found

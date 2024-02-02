@@ -23,12 +23,12 @@ public class InputController
     private int initializationFrameCount;
 
     public int CurrentFrameInInput { get; private set; } // Starts at 1
-    // public int CurrentFrameInInputForHud { get; private set; } // Starts at 1
+    public int CurrentFrameInInputForHud { get; private set; } // Starts at 1
     public int CurrentFrameInTas { get; private set; } // Starts at 0
 
-    public InputFrame Previous => Inputs.GetValueOrDefault(CurrentFrameInTas - 1);
-    public InputFrame Current => Inputs.GetValueOrDefault(CurrentFrameInTas);
-    public InputFrame Next => Inputs.GetValueOrDefault(CurrentFrameInTas + 1);
+    public InputFrame? Previous => Inputs!.GetValueOrDefault(CurrentFrameInTas - 1);
+    public InputFrame? Current => Inputs!.GetValueOrDefault(CurrentFrameInTas);
+    public InputFrame? Next => Inputs!.GetValueOrDefault(CurrentFrameInTas + 1);
     public List<Command>? CurrentCommands => Commands.GetValueOrDefault(CurrentFrameInTas);
 
     public bool CanPlayback => CurrentFrameInTas < Inputs.Count;
@@ -132,11 +132,11 @@ public class InputController
             CurrentFrameInInput = 1;
         }
 
-        // if (CurrentFrameInInputForHud == 0 || Current == Previous) {
-        //     CurrentFrameInInputForHud++;
-        // } else {
-        //     CurrentFrameInInputForHud = 1;
-        // }
+        if (CurrentFrameInInputForHud == 0 || Current == Previous) {
+            CurrentFrameInInputForHud++;
+        } else {
+            CurrentFrameInInputForHud = 1;
+        }
 
         CurrentFrameInTas++;
     }
@@ -217,17 +217,17 @@ public class InputController
 
         // Console.WriteLine($"Input {inputFrame}");
 
-        for (int i = 0; i < inputFrame.Value.Frames; i++) {
-            Inputs.Add(inputFrame.Value);
+        for (int i = 0; i < inputFrame.Frames; i++) {
+            Inputs.Add(inputFrame);
         }
 
         // LibTasHelper.WriteLibTasFrame(inputFrame);
-        initializationFrameCount += inputFrame.Value.Frames;
+        initializationFrameCount += inputFrame.Frames;
     }
 
     public void Stop() {
         CurrentFrameInInput = 0;
-        // CurrentFrameInInputForHud = 0;
+        CurrentFrameInInputForHud = 0;
         CurrentFrameInTas = 0;
         // NextCommentFastForward = null;
     }

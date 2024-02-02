@@ -88,7 +88,7 @@ public class InputHelper
         Controls.Pause = originalButtons["Pause"];
     }
 
-    public static void FeedInputs(InputFrame input)
+    public static void FeedInputs(InputFrame? input)
     {
         foreach (var binding in allButtonBindings)
         {

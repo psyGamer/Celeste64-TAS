@@ -1,3 +1,4 @@
+using Celeste64.TAS.Input;
 using Celeste64.TAS.Util;
 using ImGuiNET;
 
@@ -7,11 +8,64 @@ public static class InfoHUD
 {
     public static void RenderGUI()
     {
-        ImGui.Begin("InfoHUD");
+        ImGui.Begin("Info HUD");
 
         const int Decimals = 3;
 
-        if (Game.Scene is World world)
+        if (ImGui.BeginMainMenuBar())
+        {
+            if (ImGui.BeginMenu("Settings"))
+            {
+                bool showInputs = Save.Instance.InfoHudShowInputs;
+                bool showWorld = Save.Instance.InfoHudShowWorld;
+
+                ImGui.Checkbox("Show Input Display", ref showInputs);
+                ImGui.Checkbox("Show World Information", ref showWorld);
+
+                Save.Instance.InfoHudShowInputs = showInputs;
+                Save.Instance.InfoHudShowWorld = showWorld;
+                ImGui.EndMenu();
+            }
+            ImGui.EndMainMenuBar();
+        }
+
+        if (Save.Instance.InfoHudShowInputs)
+        {
+            var controller = Manager.Controller;
+            var inputs = controller.Inputs;
+            if (Manager.Running && controller.CurrentFrameInTas >= 0 && controller.CurrentFrameInTas < inputs.Count)
+            {
+                InputFrame? current = controller.Current;
+                if (controller.CurrentFrameInTas >= 1 && current != controller.Previous) {
+                    current = controller.Previous;
+                }
+
+                var previous = current!.Prev;
+                var next = current.Next;
+
+                int maxLine = Math.Max(current.Line, Math.Max(previous?.Line ?? 0, next?.Line ?? 0)) + 1;
+                int linePadLeft = maxLine.ToString().Length;
+
+                int maxFrames = Math.Max(current.Frames, Math.Max(previous?.Frames ?? 0, next?.Frames ?? 0));
+                int framesPadLeft = maxFrames.ToString().Length;
+
+                string FormatInputFrame(InputFrame inputFrame) => $"{(inputFrame.Line + 1).ToString().PadLeft(linePadLeft)}: {string.Empty.PadLeft(framesPadLeft - inputFrame.Frames.ToString().Length)}{inputFrame}";
+
+                if (previous != null) ImGui.Text(FormatInputFrame(previous));
+
+                string currentStr = FormatInputFrame(current);
+                int currentFrameLength = controller.CurrentFrameInInput.ToString().Length;
+                int inputWidth = currentStr.Length + currentFrameLength + 2;
+                inputWidth = Math.Max(inputWidth, 20);
+                ImGui.Text( $"{currentStr.PadRight(inputWidth - currentFrameLength)}{controller.CurrentFrameInInputForHud}");
+
+                if (next != null) ImGui.Text(FormatInputFrame(next));
+
+                ImGui.Text(string.Empty);
+            }
+        }
+
+        if (Save.Instance.InfoHudShowWorld && Game.Scene is World world)
         {
             var player = world.Get<Player>();
             if (player != null)
