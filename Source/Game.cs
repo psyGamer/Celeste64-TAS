@@ -354,7 +354,7 @@ public class Game : Module
 				scene.Render(target);
 
 			// draw screen wipe over top
-			if (transitionStep != TransitionStep.None && transition.ToBlack != null)
+			if (!Save.Instance.SimplifiedGraphics && transitionStep != TransitionStep.None && transition.ToBlack != null)
 			{
 				transition.ToBlack.Render(batcher, new Rect(0, 0, target.Width, target.Height));
 				batcher.Render(target);
