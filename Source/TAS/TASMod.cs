@@ -14,6 +14,8 @@ public class TASMod
     public static void Initialize()
     {
         CommandAttribute.CollectMethods();
+        CustomInfo.CollectAllTypeInfo();
+        CustomInfo.InitializeHelperMethods();
 
         il_App_Run = new ILHook(typeof(App).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), IL_App_Run);
         on_Time_Advance = new Hook(typeof(Time).GetMethod(nameof(Time.Advance), BindingFlags.Public | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Time_Advance);
