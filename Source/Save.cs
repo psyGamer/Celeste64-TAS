@@ -84,6 +84,7 @@ public class Save
     // Info HUD
     public bool InfoHudShowInputs { get; set; } = true;
     public bool InfoHudShowWorld { get; set; } = true;
+    public int InfoHudDecimals { get; set; } = 3;
 
 	/// <summary>
 	/// Finds the record associated with a specific level, or adds it if not found

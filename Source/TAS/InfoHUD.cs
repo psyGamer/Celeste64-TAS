@@ -11,19 +11,20 @@ public static class InfoHUD
         ImGui.SetNextWindowSizeConstraints(new Vec2(200f, 200f), new Vec2(float.PositiveInfinity, float.PositiveInfinity));
         ImGui.Begin("Info HUD", ImGuiWindowFlags.MenuBar);
 
-        const int Decimals = 3;
-
         if (ImGui.BeginMenuBar()) {
             if (ImGui.BeginMenu("Settings"))
             {
                 bool showInputs = Save.Instance.InfoHudShowInputs;
                 bool showWorld = Save.Instance.InfoHudShowWorld;
+                int decimals = Save.Instance.InfoHudDecimals;
 
                 ImGui.Checkbox("Show Input Display", ref showInputs);
                 ImGui.Checkbox("Show World Information", ref showWorld);
+                ImGui.InputInt("Decimal Points", ref decimals);
 
                 Save.Instance.InfoHudShowInputs = showInputs;
                 Save.Instance.InfoHudShowWorld = showWorld;
+                Save.Instance.InfoHudDecimals = Math.Max(decimals, 1);
                 ImGui.EndMenu();
             }
             ImGui.EndMenuBar();
@@ -70,13 +71,13 @@ public static class InfoHUD
             var player = world.Get<Player>();
             if (player != null)
             {
-                ImGui.Text($"Pos: {player.Position.X.ToFormattedString(Decimals)} {player.Position.Y.ToFormattedString(Decimals)} {player.Position.Z.ToFormattedString(Decimals)}");
-                ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Decimals)} {player.Velocity.Y.ToFormattedString(Decimals)} {player.Velocity.Z.ToFormattedString(Decimals)}");
+                ImGui.Text($"Pos: {player.Position.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Position.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Position.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
                 ImGui.Text(string.Empty);
 
                 List<string> statues = new();
                 if (player.tCoyote > 0)
-                    statues.Add($"Coyote({player.tCoyote.ToFrames()})@{player.coyoteZ.ToFormattedString(Decimals)}");
+                    statues.Add($"Coyote({player.tCoyote.ToFrames()})@{player.coyoteZ.ToFormattedString(Save.Instance.InfoHudDecimals)}");
                 if (player.tClimbCooldown > 0)
                     statues.Add($"ClimbCD({player.tClimbCooldown.ToFrames()})");
                 if (player.tDashCooldown > 0)
