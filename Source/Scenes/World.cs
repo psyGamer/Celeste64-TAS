@@ -304,48 +304,6 @@ public class World : Scene
             Log.Info($"Reloaded {x} shaders in {a} actors");
         }
 
-        // Freecam
-        if (Controls.Freecam.Pressed)
-        {
-            Save.Instance.Freecam = Save.Instance.Freecam switch
-            {
-                Save.FreecamMode.Disabled => Save.FreecamMode.Orbit,
-                Save.FreecamMode.Orbit => Save.FreecamMode.Free,
-                Save.FreecamMode.Free => Save.FreecamMode.Disabled,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            Save.Instance.SyncSettings();
-        }
-
-        // Simplified Graphics
-        if (Controls.SimplifiedGraphics.Pressed)
-        {
-            Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
-            Save.Instance.SyncSettings();
-
-            if (Save.Instance.SimplifiedGraphics) {
-                Camera.FarPlane = 8000;
-            } else {
-                Camera.FarPlane = 800;
-            }
-
-            foreach(var actor in Actors)
-            {
-                var fields = actor.GetType().GetFields()
-                    .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
-
-                foreach (var field in fields)
-                {
-                    var model = (Model)field.GetValue(actor)!;
-                    foreach (var material in model.Materials)
-                    {
-                        if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
-                        material.Simplified = Save.Instance.SimplifiedGraphics;
-                    }
-                }
-            }
-        }
-
         prevMousePosition = nextMousePosition;
         nextMousePosition = Input.Mouse.Position;
 

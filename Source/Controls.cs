@@ -17,9 +17,6 @@ public static class Controls
 	public static VirtualButton Cancel = new("Cancel");
 	public static VirtualButton Pause = new("Pause");
 
-    public static VirtualButton Freecam = new("Freecam");
-    public static VirtualButton SimplifiedGraphics = new("SimplifedGraphics");
-
 
 	public static void Load()
 	{
@@ -64,12 +61,6 @@ public static class Controls
 		Pause.Clear();
 		Pause.Add(0, Buttons.Start, Buttons.Select, Buttons.Back);
 		Pause.Add(0, Keys.Enter, Keys.Escape);
-
-        Freecam.Clear();
-        Freecam.Add(Keys.M);
-
-        SimplifiedGraphics.Clear();
-        SimplifiedGraphics.Add(Keys.N);
 
         TASControls.Load();
         InputHelper.Load();

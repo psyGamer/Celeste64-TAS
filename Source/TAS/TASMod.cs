@@ -37,6 +37,45 @@ public class TASMod
                 Manager.EnableRun();
         }
 
+        if (TASControls.Freecam.Pressed)
+        {
+            Save.Instance.Freecam = Save.Instance.Freecam switch
+            {
+                Save.FreecamMode.Disabled => Save.FreecamMode.Orbit,
+                Save.FreecamMode.Orbit => Save.FreecamMode.Free,
+                Save.FreecamMode.Free => Save.FreecamMode.Disabled,
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            Save.Instance.SyncSettings();
+        }
+
+        if (TASControls.SimplifiedGraphics.Pressed)
+        {
+            Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
+            Save.Instance.SyncSettings();
+
+            if (Game.Scene is World world)
+            {
+                world.Camera.FarPlane = Save.Instance.SimplifiedGraphics ? 8000 : 800;
+
+                foreach (var actor in world.Actors)
+                {
+                    var fields = actor.GetType().GetFields()
+                        .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
+
+                    foreach (var field in fields)
+                    {
+                        var model = (Model) field.GetValue(actor)!;
+                        foreach (var material in model.Materials)
+                        {
+                            if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
+                            material.Simplified = Save.Instance.SimplifiedGraphics;
+                        }
+                    }
+                }
+            }
+        }
+
         Manager.Update();
     }
 

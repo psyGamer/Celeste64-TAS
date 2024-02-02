@@ -11,7 +11,7 @@ public static class TASControls
     public static readonly VirtualButton PauseResume = new("PauseResume");
     public static readonly VirtualButton Hitboxes = new("Hitboxes");
     public static readonly VirtualButton TriggerHitboxes = new("TriggerHitboxes");
-    public static readonly VirtualButton SimplifiedGraphic = new("SimplifiedGraphic");
+    public static readonly VirtualButton SimplifiedGraphics = new("SimplifiedGraphics");
     public static readonly VirtualButton CenterCamera = new("CenterCamera");
     public static readonly VirtualButton LockCamera = new("LockCamera");
     public static readonly VirtualButton SaveState = new("SaveState");
@@ -25,6 +25,7 @@ public static class TASControls
     public static readonly VirtualButton CameraZoomIn = new("CameraZoomIn");
     public static readonly VirtualButton CameraZoomOut = new("CameraZoomOut");
 
+    public static readonly VirtualButton Freecam = new("Freecam");
     public static readonly VirtualButton ToggleInfoGUI = new("ToggleInfoGUI");
 
     public static void Load()
@@ -46,34 +47,39 @@ public static class TASControls
         FastForward.Clear();
         FastForward.Add(Keys.RightShift);
 
+        SimplifiedGraphics.Clear();
+        SimplifiedGraphics.Add(Keys.N);
+
+        Freecam.Clear();
+        Freecam.Add(Keys.M);
+
         ToggleInfoGUI.Clear();
         ToggleInfoGUI.Add(Keys.F12);
     }
 
-    public static bool IsTASControl(this VirtualButton self)
-    {
-        return
-            self == StartStop ||
-            self == Restart ||
-            self == FastForward ||
-            self == FastForwardComment ||
-            self == SlowForward ||
-            self == FrameAdvance ||
-            self == PauseResume ||
-            self == Hitboxes ||
-            self == TriggerHitboxes ||
-            self == SimplifiedGraphic ||
-            self == CenterCamera ||
-            self == LockCamera ||
-            self == SaveState ||
-            self == ClearState ||
-            self == InfoHud ||
-            self == FreeCamera ||
-            self == CameraUp ||
-            self == CameraDown ||
-            self == CameraLeft ||
-            self == CameraRight ||
-            self == CameraZoomIn ||
-            self == CameraZoomOut;
-    }
+    public static bool IsTASControl(this VirtualButton self) =>
+        self == StartStop ||
+        self == Restart ||
+        self == FastForward ||
+        self == FastForwardComment ||
+        self == SlowForward ||
+        self == FrameAdvance ||
+        self == PauseResume ||
+        self == Hitboxes ||
+        self == TriggerHitboxes ||
+        self == SimplifiedGraphics ||
+        self == CenterCamera ||
+        self == LockCamera ||
+        self == SaveState ||
+        self == ClearState ||
+        self == InfoHud ||
+        self == FreeCamera ||
+        self == CameraUp ||
+        self == CameraDown ||
+        self == CameraLeft ||
+        self == CameraRight ||
+        self == CameraZoomIn ||
+        self == CameraZoomOut ||
+        self == FreeCamera ||
+        self == ToggleInfoGUI;
 }
