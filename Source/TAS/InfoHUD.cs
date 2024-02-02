@@ -8,6 +8,9 @@ public static class InfoHUD
 {
     public static void RenderGUI()
     {
+        var io = ImGui.GetIO();
+        io.FontGlobalScale = Save.Instance.InfoHudFontSize;
+
         ImGui.SetNextWindowSizeConstraints(new Vec2(200f, 200f), new Vec2(float.PositiveInfinity, float.PositiveInfinity));
         ImGui.Begin("Info HUD", ImGuiWindowFlags.MenuBar);
 
@@ -17,14 +20,17 @@ public static class InfoHUD
                 bool showInputs = Save.Instance.InfoHudShowInputs;
                 bool showWorld = Save.Instance.InfoHudShowWorld;
                 int decimals = Save.Instance.InfoHudDecimals;
+                float fontSize = Save.Instance.InfoHudFontSize;
 
                 ImGui.Checkbox("Show Input Display", ref showInputs);
                 ImGui.Checkbox("Show World Information", ref showWorld);
                 ImGui.InputInt("Decimal Points", ref decimals);
+                ImGui.InputFloat("Font Size", ref fontSize, step: 0.1f);
 
                 Save.Instance.InfoHudShowInputs = showInputs;
                 Save.Instance.InfoHudShowWorld = showWorld;
                 Save.Instance.InfoHudDecimals = Math.Max(decimals, 1);
+                Save.Instance.InfoHudFontSize = Math.Max(fontSize, 0.1f);
                 ImGui.EndMenu();
             }
             ImGui.EndMenuBar();

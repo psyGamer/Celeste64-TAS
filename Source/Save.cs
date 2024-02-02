@@ -85,6 +85,7 @@ public class Save
     public bool InfoHudShowInputs { get; set; } = true;
     public bool InfoHudShowWorld { get; set; } = true;
     public int InfoHudDecimals { get; set; } = 3;
+    public float InfoHudFontSize { get; set; } = 1.0f;
 
 	/// <summary>
 	/// Finds the record associated with a specific level, or adds it if not found
