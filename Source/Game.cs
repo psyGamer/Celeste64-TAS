@@ -1,4 +1,5 @@
 ﻿using Celeste64.TAS;
+using ImGuiNET;
 using System.Diagnostics;
 using System.Reflection;
 using Module = Foster.Framework.Module;
@@ -69,6 +70,7 @@ public class Game : Module
 	private readonly FMOD.Studio.EVENT_CALLBACK audioEventCallback;
 	private int audioBeatCounter;
 	private bool audioBeatCounterEvent;
+    private ImGuiRenderer imGuiRenderer;
 
 	public AudioHandle Ambience;
 	public AudioHandle Music;
@@ -90,6 +92,9 @@ public class Game : Module
 		Controls.Load();
 
         TASMod.Initialize();
+
+        imGuiRenderer = new ImGuiRenderer();
+        imGuiRenderer.RebuildFontAtlas();
 
 		scenes.Push(new Startup());
 	}
@@ -129,6 +134,8 @@ public class Game : Module
     private static MethodInfo m_Input_Step = typeof(Input).GetMethod("Step", BindingFlags.Static | BindingFlags.NonPublic) ?? throw new Exception("Input missing Step");
 	public override void Update()
 	{
+        imGuiRenderer.Update();
+
         int loops = Manager.FrameLoops; // Copy to local variable, so it doesn't update while iterating
         for (int i = 0; i < loops; i++)
         {
@@ -319,6 +326,10 @@ public class Game : Module
 
 	public override void Render()
 	{
+        imGuiRenderer.BeforeRender();
+        ImGui.ShowDemoWindow();
+        imGuiRenderer.AfterRender();
+
 		Graphics.Clear(Color.Black);
 
 		if (transitionStep != TransitionStep.Perform && transitionStep != TransitionStep.Hold)
@@ -340,6 +351,8 @@ public class Game : Module
 				var scale = Math.Min(App.WidthInPixels / (float)target.Width, App.HeightInPixels / (float)target.Height);
 				batcher.SetSampler(new(TextureFilter.Nearest, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
 				batcher.Image(target, App.SizeInPixels / 2, target.Bounds.Size / 2, Vec2.One * scale, 0, Color.White);
+                if (imGuiRenderer.Target is { } imGuiTarget)
+                    batcher.Image(imGuiTarget, Vec2.Zero, Vec2.Zero, Vec2.One, 0, Color.White);
 				batcher.Render();
 				batcher.Clear();
 			}
