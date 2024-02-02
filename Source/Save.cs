@@ -84,6 +84,8 @@ public class Save
     // Info HUD
     public bool InfoHudShowInputs { get; set; } = true;
     public bool InfoHudShowWorld { get; set; } = true;
+    public bool InfoHudShowCustom { get; set; } = true;
+    public string InfoHudShowCustomTemplate { get; set; } = "Auto Jump: {Player.autoJump}";
     public int InfoHudDecimals { get; set; } = 3;
     public float InfoHudFontSize { get; set; } = 1.0f;
 

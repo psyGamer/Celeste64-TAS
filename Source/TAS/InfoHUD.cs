@@ -6,6 +6,8 @@ namespace Celeste64.TAS;
 
 public static class InfoHUD
 {
+    private static bool editingCustomTemplate = false;
+
     public static void RenderGUI()
     {
         var io = ImGui.GetIO();
@@ -19,16 +21,19 @@ public static class InfoHUD
             {
                 bool showInputs = Save.Instance.InfoHudShowInputs;
                 bool showWorld = Save.Instance.InfoHudShowWorld;
+                bool showCustom = Save.Instance.InfoHudShowWorld;
                 int decimals = Save.Instance.InfoHudDecimals;
                 float fontSize = Save.Instance.InfoHudFontSize;
 
                 ImGui.Checkbox("Show Input Display", ref showInputs);
                 ImGui.Checkbox("Show World Information", ref showWorld);
+                ImGui.Checkbox("Show Custom Info", ref showCustom);
                 ImGui.InputInt("Decimal Points", ref decimals);
                 ImGui.InputFloat("Font Size", ref fontSize, step: 0.1f);
 
                 Save.Instance.InfoHudShowInputs = showInputs;
                 Save.Instance.InfoHudShowWorld = showWorld;
+                Save.Instance.InfoHudShowCustom = showCustom;
                 Save.Instance.InfoHudDecimals = Math.Max(decimals, 1);
                 Save.Instance.InfoHudFontSize = Math.Max(fontSize, 0.1f);
                 ImGui.EndMenu();
@@ -103,12 +108,32 @@ public static class InfoHUD
                     : $"{Save.CurrentRecord.Time.Minutes:00}:{Save.CurrentRecord.Time.Seconds:00}:{Save.CurrentRecord.Time.Milliseconds:000}";
                 ImGui.Text($"[{Save.Instance.LevelID}] Timer: {timerStr}");
             }
+
+            ImGui.Text(string.Empty);
+        }
+
+        if (Save.Instance.InfoHudShowCustom)
+        {
+            if (!editingCustomTemplate)
+            {
+                ImGui.Text(CustomInfo.GetInfo());
+                editingCustomTemplate = ImGui.Button("Edit Custom Info Template");
+            }
+            else
+            {
+                string template = Save.Instance.InfoHudShowCustomTemplate;
+                ImGui.InputTextMultiline("##Edit Template", ref template, 32767, new Vec2(300.0f * Save.Instance.InfoHudFontSize, 200.0f * Save.Instance.InfoHudFontSize));
+                Save.Instance.InfoHudShowCustomTemplate = template;
+
+                editingCustomTemplate = !ImGui.Button("Save Custom Info Template");
+            }
+
         }
 
         ImGui.End();
     }
 
-    private static int ToFrames(this float seconds)
+    public static int ToFrames(this float seconds)
     {
         return (int) Math.Ceiling(seconds / Time.Delta);
     }

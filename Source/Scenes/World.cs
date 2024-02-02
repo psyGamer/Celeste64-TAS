@@ -17,12 +17,12 @@ public class World : Scene
     public float GeneralTimer = 0;
     public float DeathPlane = -100;
 
-    public readonly List<Actor> Actors = [];
-    private readonly List<Actor> adding = [];
-    private readonly List<Actor> destroying = [];
-    private readonly Dictionary<Type, List<Actor>> tracked = [];
-    private readonly Dictionary<Type, Queue<Actor>> recycled = [];
-    private readonly List<Type> trackedTypes = [];
+	public readonly List<Actor> Actors = [];
+	private readonly List<Actor> adding = [];
+	private readonly List<Actor> destroying = [];
+	public readonly Dictionary<Type, List<Actor>> tracked = []; // TAS: publicized
+	private readonly Dictionary<Type, Queue<Actor>> recycled = [];
+	public readonly List<Type> trackedTypes = []; // TAS: publicized
 
     private readonly List<ModelEntry> models = [];
     private readonly List<Sprite> sprites = [];
