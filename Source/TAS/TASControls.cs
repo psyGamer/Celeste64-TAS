@@ -25,6 +25,8 @@ public static class TASControls
     public static readonly VirtualButton CameraZoomIn = new("CameraZoomIn");
     public static readonly VirtualButton CameraZoomOut = new("CameraZoomOut");
 
+    public static readonly VirtualButton ToggleInfoGUI = new("ToggleInfoGUI");
+
     public static void Load()
     {
         StartStop.Clear();
@@ -43,6 +45,9 @@ public static class TASControls
 
         FastForward.Clear();
         FastForward.Add(Keys.RightShift);
+
+        ToggleInfoGUI.Clear();
+        ToggleInfoGUI.Add(Keys.F12);
     }
 
     public static bool IsTASControl(this VirtualButton self)

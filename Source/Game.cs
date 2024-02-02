@@ -70,6 +70,8 @@ public class Game : Module
 	private readonly FMOD.Studio.EVENT_CALLBACK audioEventCallback;
 	private int audioBeatCounter;
 	private bool audioBeatCounterEvent;
+
+    private bool imGuiEnabled = false;
     private ImGuiRenderer imGuiRenderer;
 
 	public AudioHandle Ambience;
@@ -134,7 +136,15 @@ public class Game : Module
     private static MethodInfo m_Input_Step = typeof(Input).GetMethod("Step", BindingFlags.Static | BindingFlags.NonPublic) ?? throw new Exception("Input missing Step");
 	public override void Update()
 	{
-        imGuiRenderer.Update();
+        if (TASControls.ToggleInfoGUI.Pressed)
+        {
+            imGuiEnabled = !imGuiEnabled;
+        }
+
+        if (imGuiEnabled)
+        {
+            imGuiRenderer.Update();
+        }
 
         int loops = Manager.FrameLoops; // Copy to local variable, so it doesn't update while iterating
         for (int i = 0; i < loops; i++)
@@ -326,9 +336,13 @@ public class Game : Module
 
 	public override void Render()
 	{
-        imGuiRenderer.BeforeRender();
-        ImGui.ShowDemoWindow();
-        imGuiRenderer.AfterRender();
+        if (imGuiEnabled)
+        {
+            imGuiRenderer.BeforeRender();
+            // Manager.RenderGUI();
+            ImGui.ShowDemoWindow();
+            imGuiRenderer.AfterRender();
+        }
 
 		Graphics.Clear(Color.Black);
 
@@ -351,7 +365,7 @@ public class Game : Module
 				var scale = Math.Min(App.WidthInPixels / (float)target.Width, App.HeightInPixels / (float)target.Height);
 				batcher.SetSampler(new(TextureFilter.Nearest, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
 				batcher.Image(target, App.SizeInPixels / 2, target.Bounds.Size / 2, Vec2.One * scale, 0, Color.White);
-                if (imGuiRenderer.Target is { } imGuiTarget)
+                if (imGuiEnabled && imGuiRenderer.Target is { } imGuiTarget)
                     batcher.Image(imGuiTarget, Vec2.Zero, Vec2.Zero, Vec2.One, 0, Color.White);
 				batcher.Render();
 				batcher.Clear();
