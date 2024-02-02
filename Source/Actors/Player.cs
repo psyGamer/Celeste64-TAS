@@ -51,7 +51,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private const float SkidJumpXYSpeed = MaxSpeed * 1.4f;
 
 	private const float WallPushoutDist = 3;
-	private const float ClimbCheckDist = 4;
+	public const float ClimbCheckDist = 4; // TAS: publicized
 	private const float ClimbSpeed = 40;
 	private const float ClimbHopUpSpeed = 80;
 	private const float ClimbHopForwardSpeed = 40;
@@ -118,8 +118,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private static Vec3 storedCameraForward;
 	private static float storedCameraDistance;
 
-	private enum States { Normal, Dashing, Skidding, Climbing, StrawbGet, FeatherStart, Feather, Respawn, Dead, StrawbReveal, Cutscene, Bubble, Cassette };
-	private enum Events { Land };
+	public enum States { Normal, Dashing, Skidding, Climbing, StrawbGet, FeatherStart, Feather, Respawn, Dead, StrawbReveal, Cutscene, Bubble, Cassette }; // TAS: publicized
+	public enum Events { Land }; // TAS: publicized
 
 	public bool Dead = false;
 
@@ -141,7 +141,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Vec3 climbingWallNormal;
 
 	public bool onGround; // TAS: publicized
-	private Vec2 targetFacing = Vec2.UnitY;
+	public Vec2 targetFacing = Vec2.UnitY; // TAS: publicized
 	private Vec3 cameraTargetForward = new(0, 1, 0);
 	private float cameraTargetDistance = 0.50f;
 
@@ -149,14 +149,14 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
     private Vec2 freecamRotation;
     private float freecamDistance = 50.0f;
 
-	private readonly StateMachine<States, Events> stateMachine;
+	public readonly StateMachine<States, Events> stateMachine; // TAS: publicized
 
 	private record struct CameraOverride(Vec3 Position, Vec3 LookAt);
 	private CameraOverride? cameraOverride = null;
 	private Vec3 cameraOriginPos;
 
-	private float tCoyote;
-	private float coyoteZ;
+	public float tCoyote; // TAS: publicized
+	public float coyoteZ;
 
 	private bool drawModel = true;
 	private bool drawHair = true;
@@ -171,7 +171,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Sound? sfxFeather;
 	private Sound? sfxBubble;
 
-	private Vec3 SolidWaistTestPos
+	public Vec3 SolidWaistTestPos // TAS: publicized
 		=> Position + Vec3.UnitZ * 3;
 	private Vec3 SolidHeadTestPos
 		=> Position + Vec3.UnitZ * 10;
@@ -927,7 +927,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		return false;
 	}
 
-	private bool TryClimb()
+	public bool TryClimb() // TAS: publicized
 	{
 		var result = ClimbCheckAt(Vec3.Zero, out var wall);
 
@@ -1296,10 +1296,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	public int Dashes => dashes;
 	private int dashes = 1;
 	private float tDash;
-	private float tDashCooldown;
+	public float tDashCooldown; // TAS: publicized
 	private float tDashResetCooldown;
 	private float tDashResetFlash;
-	private float tNoDashJump;
+	public float tNoDashJump; // TAS: publicized
 	private bool dashedOnGround;
 	private int dashTrailsCreated;
 
@@ -1502,7 +1502,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Vec2? climbCornerCameraFrom;
 	private Vec2? climbCornerCameraTo;
 	private int climbInputSign = 1;
-	private float tClimbCooldown = 0;
+	public float tClimbCooldown = 0; // TAS: publicized
 
 	private void StClimbingEnter()
 	{

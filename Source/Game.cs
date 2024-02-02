@@ -77,6 +77,8 @@ public class Game : Module
 	public AudioHandle Ambience;
 	public AudioHandle Music;
 
+    public static Scene? Scene => Instance.scenes.TryPeek(out var scene) ? scene : null;
+
 	public Game()
 	{
 		// If this isn't stored, the delegate will get GC'd and everything will crash :)
@@ -339,8 +341,7 @@ public class Game : Module
         if (imGuiEnabled)
         {
             imGuiRenderer.BeforeRender();
-            // Manager.RenderGUI();
-            ImGui.ShowDemoWindow();
+            InfoHUD.RenderGUI();
             imGuiRenderer.AfterRender();
         }
 

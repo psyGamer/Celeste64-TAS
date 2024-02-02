@@ -3,6 +3,26 @@ using System.Text.RegularExpressions;
 
 namespace Celeste64.TAS.Util;
 
+internal static class NumberExtensions {
+    private static readonly string format = "0.".PadRight(339, '#');
+
+    public static string ToFormattedString(this float value, int decimals) {
+        if (decimals == 0) {
+            return value.ToString(format);
+        } else {
+            return ((double) value).ToFormattedString(decimals);
+        }
+    }
+
+    public static string ToFormattedString(this double value, int decimals) {
+        if (decimals == 0) {
+            return value.ToString(format);
+        } else {
+            return value.ToString($"F{decimals}");
+        }
+    }
+}
+
 internal static class StringExtensions
 {
     private static readonly Regex LineBreakRegex = new(@"\r\n?|\n", RegexOptions.Compiled);
