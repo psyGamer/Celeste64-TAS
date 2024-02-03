@@ -918,7 +918,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		Dead = true;
 	}
 
-	private bool ClimbCheckAt(Vec3 offset, out WallHit hit)
+	public bool ClimbCheckAt(Vec3 offset, out WallHit hit) // TAS: publicized
 	{
 		if (World.SolidWallCheckClosestToNormal(SolidWaistTestPos + offset, ClimbCheckDist, -new Vec3(targetFacing, 0), out hit)
 		&& (RelativeMoveInput == Vec2.Zero || Vec2.Dot(hit.Normal.XY().Normalized(), RelativeMoveInput) <= -0.5f)
@@ -927,7 +927,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		return false;
 	}
 
-	public bool TryClimb() // TAS: publicized
+	private bool TryClimb()
 	{
 		var result = ClimbCheckAt(Vec3.Zero, out var wall);
 
