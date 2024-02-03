@@ -42,12 +42,12 @@ public class Batcher3D
     private readonly Material material = new(Assets.Shaders["Sprite"]);
     private bool dirty = false;
 
-    public void Line(Vec3 from, Vec3 to, Color color, float thickness = 1.0f) => Line(from, to, color, Matrix4x4.Identity, thickness);
+    public void Line(Vec3 from, Vec3 to, Color color, float thickness = 0.1f) => Line(from, to, color, Matrix4x4.Identity, thickness);
     public void Line(Vec3 from, Vec3 to, Color color, Matrix transform, float thickness = 0.1f)
     {
         var normal = (to - from).Normalized();
-        // var tangent = Vec3.Max(Vec3.Cross(normal, Vec3.UnitX), Vec3.Cross(normal, Vec3.UnitY)) * (thickness / 2.0f);
-        var tangent = normal.Z < normal.X ? new Vec3(-normal.Y, normal.X, 0.0f) : new Vec3(0.0f, -normal.Z, normal.Y);
+        // The other vector for the cross product can't be parallel to the normal
+        var tangent =  Math.Abs(Vec3.Dot(normal, Vec3.UnitX)) < 0.5f ? Vec3.Cross(normal, Vec3.UnitX) : Vec3.Cross(normal, Vec3.UnitY);
         var bitangent = Vec3.Cross(normal, tangent);
 
         tangent *= thickness;
@@ -56,6 +56,21 @@ public class Batcher3D
         Box(from - tangent - bitangent, from - tangent + bitangent, from + tangent - bitangent, from + tangent + bitangent,
             to - tangent - bitangent, to - tangent + bitangent, to + tangent - bitangent, to + tangent + bitangent,
             color, transform);
+    }
+
+    public void Cube(Vec3 center, Color color, float thickness = 0.1f) => Cube(center, color, Matrix4x4.Identity, thickness);
+    public void Cube(Vec3 center, Color color, Matrix transform, float thickness = 0.1f)
+    {
+        Box(center + new Vec3(-thickness, -thickness, -thickness),
+            center + new Vec3(thickness, -thickness, -thickness),
+            center + new Vec3(-thickness, thickness, -thickness),
+            center + new Vec3(thickness, thickness, -thickness),
+            center + new Vec3(-thickness, -thickness, thickness),
+            center + new Vec3(thickness, -thickness, thickness),
+            center + new Vec3(-thickness, thickness, thickness),
+            center + new Vec3(thickness, thickness, thickness),
+            color, transform
+        );
     }
 
     public void Circle(Vec3 center, float radius, int resolution, Color color, float thickness = 0.1f) => Circle(center, radius, resolution, color, Matrix4x4.Identity, thickness);

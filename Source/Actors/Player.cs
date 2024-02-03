@@ -2305,6 +2305,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
     {
         var transform = Matrix.CreateTranslation(-Position) * Matrix.CreateRotationZ(targetFacing.Angle()) * Matrix.CreateTranslation(Position);
 
+        populate.Line(Position + Vec3.UnitZ * 5, Position - Vec3.UnitZ * 0.01f, Color.Blue);
+
         populate.Circle(SolidWaistTestPos, WallPushoutDist, 16, Color.Red);
         populate.Circle(SolidHeadTestPos, WallPushoutDist, 16, Color.Red);
     }
