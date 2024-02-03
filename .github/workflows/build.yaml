@@ -31,14 +31,9 @@ jobs:
         run: dotnet publish -r win-x64 -c Release "-p:EmbeddedBuildProperty=ModVersion=${{env.CURRENT_COMMIT}}-dev"
       - name: Copy Content
         run: cp -r Content bin/Release/net8.0/win-x64/publish
-      - name: Create ZIP archive
-        run: |
-          pushd bin/Release/net8.0/win-x64/publish
-          zip -r ../../../../../Celeste64-TAS-${{env.CURRENT_COMMIT}}-win-x64.zip ./*
-          popd
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Celeste64-TAS-${{env.CURRENT_COMMIT}}-win-x64
-          path: Celeste64-TAS-${{env.CURRENT_COMMIT}}-win-x64.zip
+          name: Celeste64-TAS-${{env.CURRENT_COMMIT}}
+          path: bin/Release/net8.0/win-x64/publish
 
