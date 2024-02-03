@@ -7,7 +7,8 @@ namespace Celeste64.TAS;
 
 public class TASMod
 {
-    private static ILHook? il_App_Run;
+    private static ILHook? il_App_Tick;
+    private static Hook? on_App_Tick_Update;
     private static Hook? on_Time_Advance;
     private static Hook? on_VirtualButton_Update;
 
@@ -17,14 +18,16 @@ public class TASMod
         CustomInfo.CollectAllTypeInfo();
         CustomInfo.InitializeHelperMethods();
 
-        il_App_Run = new ILHook(typeof(App).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), IL_App_Run);
+        il_App_Tick = new ILHook(typeof(App).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), IL_App_Tick);
+        on_App_Tick_Update = new Hook(typeof(App).GetMethod("<Tick>g__Update|69_0", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_App_Tick_Update);
         on_Time_Advance = new Hook(typeof(Time).GetMethod(nameof(Time.Advance), BindingFlags.Public | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Time_Advance);
         on_VirtualButton_Update = new Hook(typeof(VirtualButton).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException(), On_VirtualButton_Update);
     }
 
     public static void Deinitialize()
     {
-        il_App_Run?.Dispose();
+        il_App_Tick?.Dispose();
+        on_App_Tick_Update?.Dispose();
         on_Time_Advance?.Dispose();
         on_VirtualButton_Update?.Dispose();
     }
@@ -121,7 +124,7 @@ public class TASMod
         }
     }
 
-    private static void IL_App_Run(ILContext il)
+    private static void IL_App_Tick(ILContext il)
     {
         var cur = new ILCursor(il);
         // Goto this if block:
@@ -134,5 +137,25 @@ public class TASMod
         cur.EmitCall(typeof(Manager).GetProperty(nameof(Manager.Running), BindingFlags.Public | BindingFlags.Static)!.GetGetMethod()!);
         cur.EmitNot();
         cur.EmitAnd();
+    }
+
+    private delegate void orig_App_Tick_Update(TimeSpan delta);
+    private static void On_App_Tick_Update(orig_App_Tick_Update orig, TimeSpan delta)
+    {
+        if (TASControls.ToggleInfoGUI.Pressed)
+        {
+            Game.Instance.imGuiEnabled = !Game.Instance.imGuiEnabled;
+        }
+
+        if (Game.Instance.imGuiEnabled)
+        {
+            Game.Instance.imGuiRenderer.Update();
+        }
+
+        int loops = Manager.FrameLoops; // Copy to local variable, so it doesn't update while iterating
+        for (int i = 0; i < loops; i++)
+        {
+            orig(delta);
+        }
     }
 }
