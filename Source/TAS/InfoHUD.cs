@@ -43,7 +43,7 @@ public static class InfoHUD
             {
                 bool showInputs = Save.Instance.InfoHudShowInputs;
                 bool showWorld = Save.Instance.InfoHudShowWorld;
-                bool showCustom = Save.Instance.InfoHudShowWorld;
+                bool showCustom = Save.Instance.InfoHudShowCustom;
                 int decimals = Save.Instance.InfoHudDecimals;
                 float fontSize = Save.Instance.InfoHudFontSize;
 
