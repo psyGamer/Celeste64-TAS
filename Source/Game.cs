@@ -47,7 +47,7 @@ public class Game : Module
     public static int Width => Save.Instance.SimplifiedGraphics ? HDWidth : GameWidth;
     public static int Height => Save.Instance.SimplifiedGraphics ? HDHeight : GameHeight;
 	public static readonly Version Version = typeof(Game).Assembly.GetName().Version!;
-    public static readonly Version TASVersion = new Version(0, 3, 0);
+    public static readonly Version TASVersion = new(0, 3, 1);
 	public static readonly string VersionString = $"v.{Version.Major}.{Version.Minor}.{Version.Build} - TAS v.{TASVersion.Major}.{TASVersion.Minor}.{TASVersion.Build}";
 
     public const float GameRelativeScale = GameHeight / 360.0f;
