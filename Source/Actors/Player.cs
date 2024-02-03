@@ -2309,8 +2309,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         batch.Line(Position + Vec3.UnitZ * 5, Position - Vec3.UnitZ * 0.01f, Color.Blue);
 
         // Wall collision
-        batch.Circle(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow);
-        batch.Circle(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow);
+        batch.Torus(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow);
+        batch.Torus(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow);
+        batch.Disk(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
+        batch.Disk(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
 
         // Death collision
         batch.Cube(SolidWaistTestPos, Color.Red, thickness: 0.2f);

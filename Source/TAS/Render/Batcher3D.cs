@@ -73,8 +73,8 @@ public class Batcher3D
         );
     }
 
-    public void Circle(Vec3 center, float radius, int resolution, Color color, float thickness = 0.1f) => Circle(center, radius, resolution, color, Matrix4x4.Identity, thickness);
-    public void Circle(Vec3 center, float radius, int resolution, Color color, Matrix transform, float thickness = 0.1f)
+    public void Torus(Vec3 center, float radius, int resolution, Color color, float thickness = 0.1f) => Torus(center, radius, resolution, color, Matrix4x4.Identity, thickness);
+    public void Torus(Vec3 center, float radius, int resolution, Color color, Matrix transform, float thickness = 0.1f)
     {
         var points = new Vec3[resolution];
 
@@ -84,12 +84,6 @@ public class Batcher3D
         {
             points[i] = new Vec3(Calc.AngleToVector(angle, radius), 0.0f);
         }
-
-        // for (int i = 1; i < resolution; i++)
-        // {
-        //     Line(points[i - 1], points[i], color, transform, thickness);
-        // }
-        // Line(points[^1], points[0], color, transform, thickness);
 
         EnsureVertexCapacity(vertexCount + resolution * 4); // 4 vertices each
         EnsureIndexCapacity(indexCount + resolution * 4 * 2 * 3); // 4 faces * 2 triangles * 3 vertices each
@@ -152,6 +146,68 @@ public class Batcher3D
 
         vertexCount += resolution * 4;
         indexCount += resolution * 4 * 2 * 3;
+        dirty = true;
+    }
+
+    public void Disk(Vec3 center, float radius, int resolution, Color color, float thickness = 0.1f) => Disk(center, radius, resolution, color, Matrix4x4.Identity, thickness);
+    public void Disk(Vec3 center, float radius, int resolution, Color color, Matrix transform, float thickness = 0.1f)
+    {
+        var points = new Vec3[resolution];
+
+        float angleStep = Calc.TAU / resolution;
+        float angle = 0.0f;
+        for (int i = 0; i < resolution; i++, angle += angleStep)
+        {
+            points[i] = new Vec3(Calc.AngleToVector(angle, radius), 0.0f);
+        }
+
+        EnsureVertexCapacity(vertexCount + resolution * 2 + 2); // 2 vertices each + 2 in the center
+        EnsureIndexCapacity(indexCount + resolution * 4 * 3); // 1 faces for outside + 2 triangles on top/bottom = 4 triangles * 3 vertices each
+
+        unsafe
+        {
+            Span<Vertex> vertices = new((Vertex*)vertexPtr + vertexCount, resolution * 2 + 2);
+            Span<int> indices = new((int*)indexPtr + indexCount, resolution * 4 * 3);
+
+            var up = new Vec3(0.0f, 0.0f, thickness);
+            vertices[0].Pos = Vec3.Transform(center - up, transform);
+            vertices[1].Pos = Vec3.Transform(center + up, transform);
+            vertices[0].Col = color;
+            vertices[1].Col = color;
+
+            for (int i = 0; i < resolution; i++)
+            {
+                vertices[(i * 2 + 2) + 0].Pos = Vec3.Transform(center + points[i] - up, transform);
+                vertices[(i * 2 + 2) + 1].Pos = Vec3.Transform(center + points[i] + up, transform);
+                vertices[(i * 2 + 2) + 0].Col = color;
+                vertices[(i * 2 + 2) + 1].Col = color;
+            }
+
+            for (int i = 0; i < resolution; i++)
+            {
+                int curr = i;
+                int prev = i == 0 ? resolution - 1 : i - 1; // Wrap around to the end
+
+                // Bottom
+                indices[i * (4 * 3) + 0] = vertexCount + (prev * 2 + 2) + 0;
+                indices[i * (4 * 3) + 1] = vertexCount + (curr * 2 + 2) + 0;
+                indices[i * (4 * 3) + 2] = vertexCount + 0;
+                // Top
+                indices[i * (4 * 3) + 3] = vertexCount + (curr * 2 + 2) + 1;
+                indices[i * (4 * 3) + 4] = vertexCount + (prev * 2 + 2) + 1;
+                indices[i * (4 * 3) + 5] = vertexCount + 1;
+                // Outer
+                indices[i * (4 * 3) + 6] = vertexCount + (curr * 2 + 2) + 1;
+                indices[i * (4 * 3) + 7] = vertexCount + (curr * 2 + 2) + 0;
+                indices[i * (4 * 3) + 8] = vertexCount + (prev * 2 + 2) + 0;
+                indices[i * (4 * 3) + 9] = vertexCount + (curr * 2 + 2) + 1;
+                indices[i * (4 * 3) + 10] = vertexCount + (prev * 2 + 2) + 0;
+                indices[i * (4 * 3) + 11] = vertexCount + (prev * 2 + 2) + 1;
+            }
+        }
+
+        vertexCount += resolution * 2 + 2;
+        indexCount += resolution * 4 * 3;
         dirty = true;
     }
 
