@@ -2316,6 +2316,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
         // Death collision
         batch.Cube(SolidWaistTestPos, Color.Red, thickness: 0.2f);
+
+        // Pickup colliders
+        foreach (var actor in World.All<IPickup>())
+        {
+            batch.Sphere(actor.Position, (actor as IPickup)!.PickupRadius, 12, Color.Green * 0.5f);
+        }
+        batch.Cube(Position, Color.Green, thickness: 0.2f);
     }
 
     #endregion

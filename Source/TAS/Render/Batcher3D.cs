@@ -211,6 +211,92 @@ public class Batcher3D
         dirty = true;
     }
 
+    public void Sphere(Vec3 center, float radius, int resolution, Color color) => Sphere(center, radius, resolution, color, Matrix4x4.Identity);
+    public void Sphere(Vec3 center, float radius, int resolution, Color color, Matrix transform)
+    {
+        // Taken and adapted from Utils.CreateSphere()
+        int stackCount = resolution;
+        int sliceCount = resolution;
+
+        EnsureVertexCapacity(vertexCount + 2 + (stackCount - 1) * sliceCount);
+        EnsureIndexCapacity(indexCount + sliceCount * 6 + (stackCount - 2) * sliceCount * 6);
+
+        unsafe
+        {
+            Span<Vertex> vertices = new((Vertex*)vertexPtr + vertexCount, 2 + (stackCount - 1) * sliceCount);
+            Span<int> indices = new((int*)indexPtr + indexCount, sliceCount * 6 + (stackCount - 2) * sliceCount * 6);
+
+            int vtx = 0;
+            int idx = 0;
+
+            // Add top vertex
+            int v0 = vertexCount + vtx;
+            vertices[vtx++].Pos = center + new Vec3(0.0f, 0.0f, radius);
+
+            // Generate vertices per stack / slice
+            for (int i = 0; i < stackCount - 1; i++)
+            {
+                float phi = MathF.PI * (i + 1) / (float)(stackCount);
+                for (int j = 0; j < sliceCount; j++)
+                {
+                    float theta = 2.0f * MathF.PI * (j) / (float)(sliceCount);
+                    float x = radius * MathF.Sin(phi) * MathF.Cos(theta);
+                    float y = radius * MathF.Sin(phi) * MathF.Sin(theta);
+                    float z = radius * MathF.Cos(phi);
+                    vertices[vtx++].Pos = center + new Vec3(x, y, z);
+                }
+            }
+
+            // Add bottom vertex
+            int v1 = vertexCount + vtx;
+            vertices[vtx++].Pos = center + new Vec3(0.0f, 0.0f, -radius);
+
+            // Fill-in color
+            for (int i = 0; i < vtx; i++)
+                vertices[i].Col = color;
+
+            // Add top / bottom triangles
+            for (int i = 0; i < sliceCount; ++i)
+            {
+                int i0 = i + 1;
+                int i1 = (i + 1) % sliceCount + 1;
+                indices[idx++] = v0;
+                indices[idx++] = vertexCount + i1;
+                indices[idx++] = vertexCount + i0;
+
+                i0 = i + sliceCount * (stackCount - 2) + 1;
+                i1 = (i + 1) % sliceCount + sliceCount * (stackCount - 2) + 1;
+                indices[idx++] = v1;
+                indices[idx++] = vertexCount + i0;
+                indices[idx++] = vertexCount + i1;
+            }
+
+            // Add quads per stack / slice
+            for (int j = 0; j < stackCount - 2; j++)
+            {
+                int j0 = j * sliceCount + 1;
+                int j1 = (j + 1) * sliceCount + 1;
+                for (int i = 0; i < sliceCount; i++)
+                {
+                    int i0 = j0 + i;
+                    int i1 = j0 + (i + 1) % sliceCount;
+                    int i2 = j1 + (i + 1) % sliceCount;
+                    int i3 = j1 + i;
+                    indices[idx++] = vertexCount + i0;
+                    indices[idx++] = vertexCount + i1;
+                    indices[idx++] = vertexCount + i2;
+                    indices[idx++] = vertexCount + i0;
+                    indices[idx++] = vertexCount + i2;
+                    indices[idx++] = vertexCount + i3;
+                }
+            }
+
+            vertexCount += vtx;
+            indexCount += idx;
+            dirty = true;
+        }
+    }
+
     public void Box(Vec3 min, Vec3 max, Color color) => Box(min, max, color, Matrix.Identity);
     public void Box(Vec3 min, Vec3 max, Color color, Matrix transform) =>
         Box(min with { Z = max.Z },
