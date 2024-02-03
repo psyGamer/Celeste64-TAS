@@ -172,7 +172,6 @@ public class InputController
 
             if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out var _))
             {
-                continue;
             }
             // if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out Command command) &&
             //     command.Is("Play")) {

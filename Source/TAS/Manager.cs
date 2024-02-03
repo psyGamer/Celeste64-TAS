@@ -25,7 +25,10 @@ public static class Manager {
 
     public static readonly InputController Controller = new();
 
-    static Manager() {
+    internal static Save.LevelRecord TASLevelRecord = new();
+
+    static Manager()
+    {
         AttributeUtils.CollectMethods<EnableRunAttribute>();
         AttributeUtils.CollectMethods<DisableRunAttribute>();
     }
@@ -40,8 +43,7 @@ public static class Manager {
         Controller.Clear();
         Controller.RefreshInputs();
 
-        // Controller.Inputs.ForEach(i => Log.Info($"input {i}"));
-        // Controller.Commands.ForEach(p => Log.Info($"command {p.Value}@{p.Key}"));
+        TASLevelRecord.ID = string.Empty;
     }
 
     public static void DisableRun() {
@@ -55,10 +57,13 @@ public static class Manager {
 
     public static void Update() {
         CurrState = NextState;
-
         if (!Running) return;
 
-        if (!IsPaused()) {
+        if (Save.Instance.LevelID != TASLevelRecord.ID)
+            TASLevelRecord = new Save.LevelRecord { ID = Save.Instance.LevelID };
+
+        if (!IsPaused())
+        {
             Controller.AdvanceFrame(out bool canPlayback);
 
             if (!canPlayback) {

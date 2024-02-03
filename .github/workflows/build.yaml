@@ -3,8 +3,16 @@ on:
   workflow_dispatch:
   push:
     branches: [ '*' ]
+    paths-ignore:
+      - "ReadMe.md"
+      - ".gitignore"
+      - ".editorconfig"
   pull_request:
     branches: [ '*' ]
+    paths-ignore:
+      - "ReadMe.md"
+      - ".gitignore"
+      - ".editorconfig"
 
 jobs:
   build:

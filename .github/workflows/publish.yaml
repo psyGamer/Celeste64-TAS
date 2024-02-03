@@ -22,20 +22,17 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '8.x'
-      - name: Build Windows x86_64
+      - name: Build Windows x86-64
         run: dotnet publish -c Release -r win-x64
-      - name: Build Linux x86_64
+      - name: Build Linux x86-64
         run: dotnet publish -c Release -r linux-x64
-      - name: Build MacOS x86_64
+      - name: Build macOS x86-64
         run: dotnet publish -c Release -r osx-x64
-      - name: Build MacOS ARM64
-        run: dotnet publish -c Release -r osx-arm64
       - name: Copy Content
         run: |
           cp -r Content bin/Release/net8.0/win-x64/publish
           cp -r Content bin/Release/net8.0/linux-x64/publish
           cp -r Content bin/Release/net8.0/osx-x64/publish
-          cp -r Content bin/Release/net8.0/osx-arm64/publish
       - name: Create ZIP archives
         run: |
           pushd bin/Release/net8.0/win-x64/publish
@@ -47,12 +44,10 @@ jobs:
           pushd bin/Release/net8.0/osx-x64/publish
           zip -r ../../../../../Celeste64-TAS-${{env.CURRENT_TAG}}-osx-x64.zip ./*
           popd
-          pushd bin/Release/net8.0/osx-arm64/publish
-          zip -r ../../../../../Celeste64-TAS-${{env.CURRENT_TAG}}-osx-arm64.zip ./*
-          popd
       - name: Publish Github Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{env.CURRENT_TAG}}
           name: Celeste 64 TAS v${{env.CURRENT_TAG}}
           body: |
             # Instructions:
@@ -64,5 +59,5 @@ jobs:
 
             - **Windows:** 10 or later, x64
             - **Linux:** [Distro support list](https://github.com/dotnet/core/blob/main/release-notes/8.0/supported-os.md), x64
-            - **Mac:** Monterey or later, x64 Intel-based or Apple Silicon with Rosetta
-          files: Celeste64-SpeedrunUtils-*.zip
+            - **macOS:** Monterey or later, x64 Intel-based or Apple Silicon with Rosetta
+          files: Celeste64-TAS-*.zip
