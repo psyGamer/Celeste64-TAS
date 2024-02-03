@@ -6,8 +6,10 @@ using Module = Foster.Framework.Module;
 
 namespace Celeste64;
 
-public struct Transition {
-    public enum Modes {
+public struct Transition
+{
+    public enum Modes
+    {
         Replace,
         Push,
         Pop
@@ -25,7 +27,8 @@ public struct Transition {
     public float HoldOnBlackFor;
 }
 
-public class Game : Module {
+public class Game : Module
+{
     public enum TransitionStep // TAS: publicized
     {
         None,
@@ -76,12 +79,14 @@ public class Game : Module {
 
     public static Scene? Scene => Instance.scenes.TryPeek(out var scene) ? scene : null;
 
-    public Game() {
+    public Game()
+    {
         // If this isn't stored, the delegate will get GC'd and everything will crash :)
         audioEventCallback = MusicTimelineCallback;
     }
 
-    public override void Startup() {
+    public override void Startup()
+    {
         instance = this;
 
         Time.FixedStep = true;
@@ -98,13 +103,15 @@ public class Game : Module {
         scenes.Push(new Startup());
     }
 
-    public override void Shutdown() {
+    public override void Shutdown()
+    {
         TASMod.Deinitialize();
 
         if (scenes.TryPeek(out var topScene))
             topScene.Exited();
 
-        while (scenes.Count > 0) {
+        while (scenes.Count > 0)
+        {
             var it = scenes.Pop();
             it.Disposed();
         }
@@ -115,7 +122,8 @@ public class Game : Module {
 
     public bool IsMidTransition => transitionStep != TransitionStep.None;
 
-    public void Goto(Transition next) {
+    public void Goto(Transition next)
+    {
         Debug.Assert(
             transitionStep == TransitionStep.None ||
             transitionStep == TransitionStep.FadeIn);
@@ -128,89 +136,97 @@ public class Game : Module {
     }
 
     private static MethodInfo m_Input_Step = typeof(Input).GetMethod("Step", BindingFlags.Static | BindingFlags.NonPublic) ?? throw new Exception("Input missing Step");
-    public override void Update() {
-        if (TASControls.ToggleInfoGUI.Pressed) {
+
+    public override void Update()
+    {
+        if (TASControls.ToggleInfoGUI.Pressed)
+        {
             imGuiEnabled = !imGuiEnabled;
         }
 
-        if (imGuiEnabled) {
+        if (imGuiEnabled)
+        {
             imGuiRenderer.Update();
         }
 
         int loops = Manager.FrameLoops; // Copy to local variable, so it doesn't update while iterating
-        for (int i = 0; i < loops; i++) {
+        for (int i = 0; i < loops; i++)
+        {
             // We need to manually update the input on the 2nd iteration and forward
             if (i >= 1) m_Input_Step.Invoke(null, []);
 
             TASMod.Update();
-            if (Manager.IsPaused()) {
-                scenes.TryPeek(out var camscene);
-                if (!(camscene is World)) continue;
-                var pausing =
-                    transitionStep == TransitionStep.FadeIn && transition.FromPause ||
-                    transitionStep == TransitionStep.FadeOut && transition.ToPause;
+            if (Manager.IsPaused())
+            {
+					transitionStep == TransitionStep.FadeOut && transition.ToPause;
+                if (!scenes.TryPeek(out var camscene) || camscene is not World) continue;
 
-                if (!pausing) {
-                    //update Mouse and Camera for Freecam
-                    if (camscene is not World world) continue;
-                    world.Get<Player>()?.UpdateCamera();
-                    world.Get<Player>()?.LateCameraUpdate();
+                camscene.Update();
 
-                    world.prevMousePosition = world.nextMousePosition;
-                    world.nextMousePosition = Input.Mouse.Position;
-                    continue;
-                }
+                if (camscene is not World world) continue;
+                world.prevMousePosition = world.nextMousePosition;
+                world.nextMousePosition = Input.Mouse.Position;
             }
-
+			}
             // update top scene
-            if (scenes.TryPeek(out var scene)) {
+            if (scenes.TryPeek(out var scene))
+            {
                 var pausing =
                     transitionStep == TransitionStep.FadeIn && transition.FromPause ||
                     transitionStep == TransitionStep.FadeOut && transition.ToPause;
+					transitionStep == TransitionStep.FadeOut && transition.ToPause;
 
                 if (!pausing)
                     scene.Update();
             }
-
             // handle transitions
-            if (transitionStep == TransitionStep.FadeOut) {
-                if (transition.ToBlack == null || transition.ToBlack.IsFinished) {
+            if (transitionStep == TransitionStep.FadeOut)
+            {
+                if (transition.ToBlack == null || transition.ToBlack.IsFinished)
+                {
                     transitionStep = TransitionStep.Hold;
                 }
-                else {
+                else
+                {
                     transition.ToBlack.Update();
                 }
             }
-            else if (transitionStep == TransitionStep.Hold) {
+            else if (transitionStep == TransitionStep.Hold)
+            {
                 transition.HoldOnBlackFor -= Time.Delta;
-                if (transition.HoldOnBlackFor <= 0) {
+                if (transition.HoldOnBlackFor <= 0)
+                {
                     if (transition.FromBlack != null)
                         transition.ToBlack = transition.FromBlack;
                     transition.ToBlack?.Restart(true);
                     transitionStep = TransitionStep.Perform;
                 }
             }
-            else if (transitionStep == TransitionStep.Perform) {
+            else if (transitionStep == TransitionStep.Perform)
+            {
                 Audio.StopBus(Sfx.bus_gameplay_world, false);
-
+				Audio.StopBus(Sfx.bus_gameplay_world, false);
                 // exit last scene
-                if (scenes.TryPeek(out var lastScene)) {
+                if (scenes.TryPeek(out var lastScene))
+                {
                     lastScene?.Exited();
                     if (transition.Mode != Transition.Modes.Push)
                         lastScene?.Disposed();
                 }
-
+				}
                 // reload assets if requested
-                if (transition.PerformAssetReload) {
+                if (transition.PerformAssetReload)
+                {
                     Assets.Load();
                 }
+				}
 
                 // perform game save between transitions
                 if (transition.Saving)
                     Save.Instance.SaveToFile();
-
                 // perform transition
-                switch (transition.Mode) {
+                switch (transition.Mode)
+                {
                     case Transition.Modes.Replace:
                         Debug.Assert(transition.Scene != null);
                         if (scenes.Count > 0)
@@ -226,75 +242,88 @@ public class Game : Module {
                         scenes.Pop();
                         break;
                 }
+				}
 
                 // don't let the game sit in a sceneless place
                 if (scenes.Count <= 0)
                     scenes.Push(new Overworld(false));
-
                 // run a single update when transition happens so stuff gets established
-                if (scenes.TryPeek(out var nextScene)) {
+                if (scenes.TryPeek(out var nextScene))
+                {
                     nextScene.Entered();
                     nextScene.Update();
                 }
-
+				}
                 // switch music
                 {
                     var last = Music.IsPlaying && lastScene != null ? lastScene.Music : string.Empty;
                     var next = nextScene?.Music ?? string.Empty;
-                    if (next != last) {
+                    if (next != last)
+                    {
                         Music.Stop();
                         Music = Audio.Play(next);
                         if (Music)
                             Music.SetCallback(audioEventCallback);
                     }
                 }
-
+				}
                 // switch ambience
                 {
                     var last = Ambience.IsPlaying && lastScene != null ? lastScene.Ambience : string.Empty;
                     var next = nextScene?.Ambience ?? string.Empty;
-                    if (next != last) {
+                    if (next != last)
+                    {
                         Ambience.Stop();
                         Ambience = Audio.Play(next);
                     }
                 }
-
+				}
                 // in case new music was played
                 Save.Instance.SyncSettings();
                 transitionStep = TransitionStep.FadeIn;
             }
-            else if (transitionStep == TransitionStep.FadeIn) {
-                if (transition.ToBlack == null || transition.ToBlack.IsFinished) {
+            else if (transitionStep == TransitionStep.FadeIn)
+            {
+                if (transition.ToBlack == null || transition.ToBlack.IsFinished)
+                {
                     transitionStep = TransitionStep.None;
                     transition = new();
                 }
-                else {
+                else
+                {
                     transition.ToBlack.Update();
                 }
             }
-            else if (transitionStep == TransitionStep.None) {
+            else if (transitionStep == TransitionStep.None)
+            {
                 // handle audio beat events on main thread
-                if (audioBeatCounterEvent) {
+                if (audioBeatCounterEvent)
+                {
                     audioBeatCounterEvent = false;
                     audioBeatCounter++;
-
-                    if (scene is World world) {
+					audioBeatCounter++;
+                    if (scene is World world)
+                    {
                         foreach (var listener in world.All<IListenToAudioCallback>())
                             (listener as IListenToAudioCallback)?.AudioCallbackEvent(audioBeatCounter);
                     }
                 }
             }
+			}
 
-
-            if (scene is not Celeste64.Startup) {
+            if (scene is not Celeste64.Startup)
+            {
                 // toggle fullsrceen
                 if ((Input.Keyboard.Alt && Input.Keyboard.Pressed(Keys.Enter)) || Input.Keyboard.Pressed(Keys.F4))
                     Save.Instance.ToggleFullscreen();
-
+					Save.Instance.ToggleFullscreen();
                 // reload state
-                if (Input.Keyboard.Ctrl && Input.Keyboard.Pressed(Keys.R) && !IsMidTransition) {
-                    if (scene is World world) {
-                        Goto(new Transition() {
+                if (Input.Keyboard.Ctrl && Input.Keyboard.Pressed(Keys.R) && !IsMidTransition)
+                {
+                    if (scene is World world)
+                    {
+                        Goto(new Transition()
+                        {
                             Mode = Transition.Modes.Replace,
                             Scene = () => new World(world.Entry),
                             ToPause = true,
@@ -302,8 +331,10 @@ public class Game : Module {
                             PerformAssetReload = true
                         });
                     }
-                    else {
-                        Goto(new Transition() {
+                    else
+                    {
+                        Goto(new Transition()
+                        {
                             Mode = Transition.Modes.Replace,
                             Scene = () => new Titlescreen(),
                             ToPause = true,
@@ -315,31 +346,35 @@ public class Game : Module {
             }
         }
     }
-
-    public override void Render() {
-        if (imGuiEnabled) {
+	}
+    public override void Render()
+    {
+        if (imGuiEnabled)
+        {
             imGuiRenderer.BeforeRender();
             InfoHUD.RenderGUI();
             imGuiRenderer.AfterRender();
         }
+		}
 
         Graphics.Clear(Color.Black);
-
-        if (transitionStep != TransitionStep.Perform && transitionStep != TransitionStep.Hold) {
+        if (transitionStep != TransitionStep.Perform && transitionStep != TransitionStep.Hold)
+        {
             // draw the world to the target
             if (scenes.TryPeek(out var scene))
                 scene.Render(target);
-
+				scene.Render(target);
             // draw screen wipe over top
-            if (!Save.Instance.SimplifiedGraphics && transitionStep != TransitionStep.None && transition.ToBlack != null) {
+            if (!Save.Instance.SimplifiedGraphics && transitionStep != TransitionStep.None && transition.ToBlack != null)
+            {
                 transition.ToBlack.Render(batcher, new Rect(0, 0, target.Width, target.Height));
                 batcher.Render(target);
                 batcher.Clear();
             }
-
+			}
             // draw the target to the window
             {
-                var scale = Math.Min(App.WidthInPixels / (float) target.Width, App.HeightInPixels / (float) target.Height);
+                var scale = Math.Min(App.WidthInPixels / (float)target.Width, App.HeightInPixels / (float)target.Height);
                 batcher.SetSampler(new(TextureFilter.Nearest, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
                 batcher.Image(target, App.SizeInPixels / 2, target.Bounds.Size / 2, Vec2.One * scale, 0, Color.White);
                 if (imGuiEnabled && imGuiRenderer.Target is { } imGuiTarget)
@@ -349,11 +384,13 @@ public class Game : Module {
             }
         }
     }
-
-    private FMOD.RESULT MusicTimelineCallback(FMOD.Studio.EVENT_CALLBACK_TYPE type, IntPtr _event, IntPtr parameters) {
+	}
+    private FMOD.RESULT MusicTimelineCallback(FMOD.Studio.EVENT_CALLBACK_TYPE type, IntPtr _event, IntPtr parameters)
+    {
         // notify that an audio event happend (but handle it on the main thread)
         if (transitionStep == TransitionStep.None)
             audioBeatCounterEvent = true;
         return FMOD.RESULT.OK;
     }
+	}
 }

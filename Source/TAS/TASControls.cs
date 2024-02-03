@@ -80,6 +80,6 @@ public static class TASControls
         self == CameraRight ||
         self == CameraZoomIn ||
         self == CameraZoomOut ||
-        self == FreeCamera ||
+        self == Freecam ||
         self == ToggleInfoGUI;
 }
