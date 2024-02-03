@@ -1,3 +1,4 @@
+using Celeste64.TAS;
 using System.Diagnostics;
 using ModelEntry = (Celeste64.Actor Actor, Celeste64.Model Model);
 
@@ -42,8 +43,8 @@ public class World : Scene
     private readonly Menu settingsMenu = new();
 
     // Used for mouse offset
-    private Vec2 nextMousePosition;
-    private Vec2 prevMousePosition;
+    public Vec2 nextMousePosition;//CelesteTAS: publicised
+    public Vec2 prevMousePosition; //CelesteTAS: publicised
     public Vec2 MouseDelta => Input.Mouse.Position - prevMousePosition;
 
     // makes the Strawberry UI wiggle when one is collected
@@ -148,6 +149,9 @@ public class World : Scene
         map.Load(this);
 
         Log.Info($"Loaded Map '{Entry.Map}' in {stopwatch.ElapsedMilliseconds}ms");
+
+        //CelesteTAS
+        Manager.world = this;
     }
 
     public override void Disposed()
