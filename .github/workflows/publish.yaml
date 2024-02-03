@@ -53,6 +53,7 @@ jobs:
       - name: Publish Github Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{env.CURRENT_TAG}}
           name: Celeste 64 TAS v${{env.CURRENT_TAG}}
           body: |
             # Instructions:
