@@ -50,12 +50,94 @@ public class Batcher3D
         var tangent = normal.Z < normal.X ? new Vec3(-normal.Y, normal.X, 0.0f) : new Vec3(0.0f, -normal.Z, normal.Y);
         var bitangent = Vec3.Cross(normal, tangent);
 
-        tangent *= thickness / 2.0f;
-        bitangent *= thickness / 2.0f;
+        tangent *= thickness;
+        bitangent *= thickness;
 
         Box(from - tangent - bitangent, from - tangent + bitangent, from + tangent - bitangent, from + tangent + bitangent,
             to - tangent - bitangent, to - tangent + bitangent, to + tangent - bitangent, to + tangent + bitangent,
             color, transform);
+    }
+
+    public void Circle(Vec3 center, float radius, int resolution, Color color, float thickness = 0.1f) => Circle(center, radius, resolution, color, Matrix4x4.Identity, thickness);
+    public void Circle(Vec3 center, float radius, int resolution, Color color, Matrix transform, float thickness = 0.1f)
+    {
+        var points = new Vec3[resolution];
+
+        float angleStep = Calc.TAU / resolution;
+        float angle = 0.0f;
+        for (int i = 0; i < resolution; i++, angle += angleStep)
+        {
+            points[i] = new Vec3(Calc.AngleToVector(angle, radius), 0.0f);
+        }
+
+        // for (int i = 1; i < resolution; i++)
+        // {
+        //     Line(points[i - 1], points[i], color, transform, thickness);
+        // }
+        // Line(points[^1], points[0], color, transform, thickness);
+
+        EnsureVertexCapacity(vertexCount + resolution * 4); // 4 vertices each
+        EnsureIndexCapacity(indexCount + resolution * 4 * 2 * 3); // 4 faces * 2 triangles * 3 vertices each
+
+        unsafe
+        {
+            Span<Vertex> vertices = new((Vertex*)vertexPtr + vertexCount, resolution * 4);
+            Span<int> indices = new((int*)indexPtr + indexCount, resolution * 4 * 2 * 3);
+
+            for (int i = 0; i < resolution; i++)
+            {
+                var normal = points[i].Normalized() * thickness;
+                var up = new Vec3(0.0f, 0.0f, thickness);
+
+                vertices[i * 4 + 0].Pos = Vec3.Transform(center + points[i] + normal - up, transform);
+                vertices[i * 4 + 1].Pos = Vec3.Transform(center + points[i] - normal - up, transform);
+                vertices[i * 4 + 2].Pos = Vec3.Transform(center + points[i] + normal + up, transform);
+                vertices[i * 4 + 3].Pos = Vec3.Transform(center + points[i] - normal + up, transform);
+                vertices[i * 4 + 0].Col = color;
+                vertices[i * 4 + 1].Col = color;
+                vertices[i * 4 + 2].Col = color;
+                vertices[i * 4 + 3].Col = color;
+            }
+
+            for (int i = 0; i < resolution; i++)
+            {
+                int curr = i;
+                int prev = i == 0 ? resolution - 1 : i - 1; // Wrap around to the end
+
+                // Bottom
+                indices[i * (4 * 2 * 3) + 0] = vertexCount + prev * 4 + 0;
+                indices[i * (4 * 2 * 3) + 1] = vertexCount + curr * 4 + 0;
+                indices[i * (4 * 2 * 3) + 2] = vertexCount + prev * 4 + 1;
+                indices[i * (4 * 2 * 3) + 3] = vertexCount + prev * 4 + 0;
+                indices[i * (4 * 2 * 3) + 4] = vertexCount + curr * 4 + 0;
+                indices[i * (4 * 2 * 3) + 5] = vertexCount + curr * 4 + 1;
+                // Top
+                indices[i * (4 * 2 * 3) + 6] = vertexCount + prev * 4 + 2;
+                indices[i * (4 * 2 * 3) + 7] = vertexCount + prev * 4 + 3;
+                indices[i * (4 * 2 * 3) + 8] = vertexCount + curr * 4 + 3;
+                indices[i * (4 * 2 * 3) + 9] = vertexCount + prev * 4 + 2;
+                indices[i * (4 * 2 * 3) + 10] = vertexCount + curr * 4 + 3;
+                indices[i * (4 * 2 * 3) + 11] = vertexCount + curr * 4 + 2;
+                // Outer
+                indices[i * (4 * 2 * 3) + 12] = vertexCount + prev * 4 + 0;
+                indices[i * (4 * 2 * 3) + 13] = vertexCount + curr * 4 + 2;
+                indices[i * (4 * 2 * 3) + 14] = vertexCount + prev * 4 + 2;
+                indices[i * (4 * 2 * 3) + 15] = vertexCount + prev * 4 + 0;
+                indices[i * (4 * 2 * 3) + 16] = vertexCount + curr * 4 + 0;
+                indices[i * (4 * 2 * 3) + 17] = vertexCount + curr * 4 + 2;
+                // Inner
+                indices[i * (4 * 2 * 3) + 18] = vertexCount + prev * 4 + 1;
+                indices[i * (4 * 2 * 3) + 19] = vertexCount + prev * 4 + 3;
+                indices[i * (4 * 2 * 3) + 20] = vertexCount + curr * 4 + 3;
+                indices[i * (4 * 2 * 3) + 21] = vertexCount + prev * 4 + 1;
+                indices[i * (4 * 2 * 3) + 22] = vertexCount + curr * 4 + 3;
+                indices[i * (4 * 2 * 3) + 23] = vertexCount + curr * 4 + 1;
+            }
+        }
+
+        vertexCount += resolution * 4;
+        indexCount += resolution * 4 * 2 * 3;
+        dirty = true;
     }
 
     /// <summary>
@@ -74,8 +156,8 @@ public class Batcher3D
                     Vec3 v4, Vec3 v5, Vec3 v6, Vec3 v7,
                     Color color, Matrix transform)
     {
-        EnsureVertexCapacity(vertexCount + 8); // 8 corners
-        EnsureIndexCapacity(indexCount + 36); // 6 sides * 2 triangles * 3 vertices
+        EnsureVertexCapacity(vertexCount + 8);
+        EnsureIndexCapacity(indexCount + 6 * 2 * 3); // 6 faces * 2 triangles * 3 vertices
 
         unsafe
         {
@@ -144,7 +226,7 @@ public class Batcher3D
         }
 
         vertexCount += 8;
-        indexCount += 36;
+        indexCount += 6 * 2 * 3;
         dirty = true;
     }
 
