@@ -1,4 +1,3 @@
-
 using Celeste64.TAS;
 using Celeste64.TAS.Input.Commands;
 
@@ -69,11 +68,11 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private const float FeatherExitXYMult = .5f;
 	private const float FeatherExitZSpeed = 60;
 
-    public const float FreecamRotateSpeed = 0.5f;// TAS: publicized
-    public const float FreecamZoomSpeed = 5.0f;// TAS: publicized
-    public const float FreecamMoveSpeed = 3.0f;// TAS: publicized
+	public const float FreecamRotateSpeed = 0.5f; // TAS: publicized
+	public const float FreecamZoomSpeed = 5.0f; // TAS: publicized
+	public const float FreecamMoveSpeed = 3.0f; // TAS: publicized
 
-    static private readonly Color CNormal = 0xdb2c00;
+	static private readonly Color CNormal = 0xdb2c00;
 	static private readonly Color CNoDash = 0x6ec0ff;
 	static private readonly Color CTwoDashes = 0xfa91ff;
 	static private readonly Color CRefillFlash = Color.White;
@@ -145,11 +144,11 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private Vec3 cameraTargetForward = new(0, 1, 0);
 	private float cameraTargetDistance = 0.50f;
 
-    public Vec3 freecamPosition;// TAS: publicized
-    public Vec2 freecamRotation;// TAS: publicized
-    public float freecamDistance = 50.0f;// TAS: publicized
+	public Vec3 freecamPosition; // TAS: publicized
+	public Vec2 freecamRotation; // TAS: publicized
+	public float freecamDistance = 50.0f; // TAS: publicized
 
-    public readonly StateMachine<States, Events> stateMachine; // TAS: publicized
+	public readonly StateMachine<States, Events> stateMachine; // TAS: publicized
 
 	private record struct CameraOverride(Vec3 Position, Vec3 LookAt);
 	private CameraOverride? cameraOverride = null;
@@ -271,79 +270,87 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		World.Camera.LookAt = target;
 		World.Camera.Position = orig;
 
-        freecamPosition = Position;
+		freecamPosition = Position;
 	}
 
-    public void UpdateCamera() {
-        //Part 1
-        if (Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free) {
-            // Freecam rotation
-            if (Input.Mouse.Down(MouseButtons.Left)) {
-                freecamRotation.X += World.MouseDelta.X * Time.Delta * FreecamRotateSpeed;
-                freecamRotation.Y += World.MouseDelta.Y * Time.Delta * FreecamRotateSpeed;
-                freecamRotation.X %= 360.0f * Calc.DegToRad;
-                freecamRotation.Y = Math.Clamp(freecamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
-            }
-            // Freecam zoom
-            freecamDistance -= Input.Mouse.Wheel.Y * FreecamZoomSpeed;
-            // Hide cursor while dragging camera
-        }
+	public void UpdateCamera()
+	{
+		//Part 1
+		if (Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free)
+		{
+			// Freecam rotation
+			if (Input.Mouse.Down(MouseButtons.Left))
+			{
+				freecamRotation.X += World.MouseDelta.X * Time.Delta * FreecamRotateSpeed;
+				freecamRotation.Y += World.MouseDelta.Y * Time.Delta * FreecamRotateSpeed;
+				freecamRotation.X %= 360.0f * Calc.DegToRad;
+				freecamRotation.Y = Math.Clamp(freecamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
+			}
 
-        if (Save.Instance.Freecam == Save.FreecamMode.Free) {
-            // Freecam movement
-            var cameraForward = new Vec2(
-                MathF.Sin(freecamRotation.X),
-                MathF.Cos(freecamRotation.X));
-            var cameraRight = new Vec2(
-                MathF.Sin(freecamRotation.X - Calc.HalfPI),
-                MathF.Cos(freecamRotation.X - Calc.HalfPI));
-            freecamPosition.X -= Controls.Move.Value.Y * cameraForward.X * FreecamMoveSpeed;
-            freecamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * FreecamMoveSpeed;
-            freecamPosition.X -= Controls.Move.Value.X * cameraRight.X * FreecamMoveSpeed;
-            freecamPosition.Y -= Controls.Move.Value.X * cameraRight.Y * FreecamMoveSpeed;
-            if (Input.Keyboard.Down(Keys.Space))
-                freecamPosition.Z += FreecamMoveSpeed;
-            if (Input.Keyboard.Down(Keys.LeftControl))
-                freecamPosition.Z -= FreecamMoveSpeed;
-        }
+			// Freecam zoom
+			freecamDistance -= Input.Mouse.Wheel.Y * FreecamZoomSpeed;
+			// Hide cursor while dragging camera
+		}
 
-        App.MouseVisible = !(Input.Mouse.Down(MouseButtons.Left) &&
-                             Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free);
+		if (Save.Instance.Freecam == Save.FreecamMode.Free)
+		{
+			// Freecam movement
+			var cameraForward = new Vec2(
+				MathF.Sin(freecamRotation.X),
+				MathF.Cos(freecamRotation.X));
+			var cameraRight = new Vec2(
+				MathF.Sin(freecamRotation.X - Calc.HalfPI),
+				MathF.Cos(freecamRotation.X - Calc.HalfPI));
+			freecamPosition.X -= Controls.Move.Value.Y * cameraForward.X * FreecamMoveSpeed;
+			freecamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * FreecamMoveSpeed;
+			freecamPosition.X -= Controls.Move.Value.X * cameraRight.X * FreecamMoveSpeed;
+			freecamPosition.Y -= Controls.Move.Value.X * cameraRight.Y * FreecamMoveSpeed;
+			if (Input.Keyboard.Down(Keys.Space))
+				freecamPosition.Z += FreecamMoveSpeed;
+			if (Input.Keyboard.Down(Keys.LeftControl))
+				freecamPosition.Z -= FreecamMoveSpeed;
+		}
 
-        //Part 2
-        // only update camera if not dead and not in freecam
-        if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead &&
-            stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette) {
-            // Rotate Camera
-            {
-                var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
-                rot -= Controls.Camera.Value.X * Time.Delta * 4;
+		App.MouseVisible = !(Input.Mouse.Down(MouseButtons.Left) &&
+		                     Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free);
 
-                var angle = Calc.AngleToVector(rot);
-                cameraTargetForward = new(angle, 0);
-            }
+		//Part 2
+		// only update camera if not dead and not in freecam
+		if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead &&
+		    stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
+		{
+			// Rotate Camera
+			{
+				var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
+				rot -= Controls.Camera.Value.X * Time.Delta * 4;
 
-            // Move Camera in / out
-            if (Controls.Camera.Value.Y != 0) {
-                cameraTargetDistance += Controls.Camera.Value.Y * Time.Delta;
-                cameraTargetDistance = Calc.Clamp(cameraTargetDistance, 0, 1);
-            }
-            else {
-                const float interval = 1f / 3;
-                const float threshold = .1f;
-                if (cameraTargetDistance % interval < threshold || cameraTargetDistance % interval > interval - threshold)
-                    Calc.Approach(ref cameraTargetDistance, Calc.Snap(cameraTargetDistance, interval), Time.Delta / 2);
-            }
-        }
-    }
+				var angle = Calc.AngleToVector(rot);
+				cameraTargetForward = new(angle, 0);
+			}
+
+			// Move Camera in / out
+			if (Controls.Camera.Value.Y != 0)
+			{
+				cameraTargetDistance += Controls.Camera.Value.Y * Time.Delta;
+				cameraTargetDistance = Calc.Clamp(cameraTargetDistance, 0, 1);
+			}
+			else
+			{
+				const float interval = 1f / 3;
+				const float threshold = .1f;
+				if (cameraTargetDistance % interval < threshold || cameraTargetDistance % interval > interval - threshold)
+					Calc.Approach(ref cameraTargetDistance, Calc.Snap(cameraTargetDistance, interval), Time.Delta / 2);
+			}
+		}
+	}
 
 	public override void Update()
 	{
-        //Part 1
-        UpdateCamera();
+		//Part 1
+		UpdateCamera();
 
-        // Dont run any player logic while in freecam
-        if (Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
+		// Dont run any player logic while in freecam
+		if (Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
 
 		//Part 2
 
@@ -358,8 +365,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		if (!InBubble)
 		{
 			if (Position.Z < World.DeathPlane ||
-				World.Overlaps<DeathBlock>(SolidWaistTestPos) ||
-				World.Overlaps<SpikeBlock>(SolidWaistTestPos, spikeBlockCheck))
+			    World.Overlaps<DeathBlock>(SolidWaistTestPos) ||
+			    World.Overlaps<SpikeBlock>(SolidWaistTestPos, spikeBlockCheck))
 			{
 				Kill();
 				return;
@@ -442,65 +449,72 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			}
 		}
 	}
-    public void LateCameraUpdate() {
-        if (Save.Instance.Freecam == Save.FreecamMode.Free) {
-            var forward = new Vec3(
-                MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
-                MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
-                MathF.Sin(-freecamRotation.Y));
-            World.Camera.Position = freecamPosition;
-            World.Camera.LookAt = freecamPosition + forward;
-        }
-        else if (Save.Instance.Freecam == Save.FreecamMode.Orbit) {
-            var forward = new Vec3(
-                MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
-                MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
-                MathF.Sin(-freecamRotation.Y));
-            World.Camera.LookAt = Position;
-            World.Camera.Position = Position - forward * Math.Max(10.0f, freecamDistance);
-        }
-        else {
-            // update camera origin position
-            {
-                float ZPad = stateMachine.State == States.Climbing ? 0 : 8;
-                cameraOriginPos.X = Position.X;
-                cameraOriginPos.Y = Position.Y;
 
-                float targetZ;
-                if (onGround)
-                    targetZ = Position.Z;
-                else if (Position.Z < cameraOriginPos.Z)
-                    targetZ = Position.Z;
-                else if (Position.Z > cameraOriginPos.Z + ZPad)
-                    targetZ = Position.Z - ZPad;
-                else
-                    targetZ = cameraOriginPos.Z;
+	public void LateCameraUpdate()
+	{
+		if (Save.Instance.Freecam == Save.FreecamMode.Free)
+		{
+			var forward = new Vec3(
+				MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+				MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+				MathF.Sin(-freecamRotation.Y));
+			World.Camera.Position = freecamPosition;
+			World.Camera.LookAt = freecamPosition + forward;
+		}
+		else if (Save.Instance.Freecam == Save.FreecamMode.Orbit)
+		{
+			var forward = new Vec3(
+				MathF.Sin(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+				MathF.Cos(freecamRotation.X) * MathF.Cos(freecamRotation.Y),
+				MathF.Sin(-freecamRotation.Y));
+			World.Camera.LookAt = Position;
+			World.Camera.Position = Position - forward * Math.Max(10.0f, freecamDistance);
+		}
+		else
+		{
+			// update camera origin position
+			{
+				float ZPad = stateMachine.State == States.Climbing ? 0 : 8;
+				cameraOriginPos.X = Position.X;
+				cameraOriginPos.Y = Position.Y;
 
-                if (cameraOriginPos.Z != targetZ)
-                    cameraOriginPos.Z += (targetZ - cameraOriginPos.Z) * (1 - MathF.Pow(.001f, Time.Delta));
-            }
+				float targetZ;
+				if (onGround)
+					targetZ = Position.Z;
+				else if (Position.Z < cameraOriginPos.Z)
+					targetZ = Position.Z;
+				else if (Position.Z > cameraOriginPos.Z + ZPad)
+					targetZ = Position.Z - ZPad;
+				else
+					targetZ = cameraOriginPos.Z;
 
-            // update camera position
-            {
-                Vec3 lookAt, cameraPos;
+				if (cameraOriginPos.Z != targetZ)
+					cameraOriginPos.Z += (targetZ - cameraOriginPos.Z) * (1 - MathF.Pow(.001f, Time.Delta));
+			}
 
-                if (cameraOverride.HasValue) {
-                    lookAt = cameraOverride.Value.LookAt;
-                    cameraPos = cameraOverride.Value.Position;
-                }
-                else {
-                    GetCameraTarget(out lookAt, out cameraPos, out _);
-                }
+			// update camera position
+			{
+				Vec3 lookAt, cameraPos;
 
-                World.Camera.Position += (cameraPos - World.Camera.Position) * (1 - MathF.Pow(0.01f, Time.Delta));
-                World.Camera.LookAt = lookAt;
+				if (cameraOverride.HasValue)
+				{
+					lookAt = cameraOverride.Value.LookAt;
+					cameraPos = cameraOverride.Value.Position;
+				}
+				else
+				{
+					GetCameraTarget(out lookAt, out cameraPos, out _);
+				}
 
-                float targetFOV = Calc.ClampedMap(velocity.XY().Length(), MaxSpeed * 1.2f, 120, 1, 1.2f);
+				World.Camera.Position += (cameraPos - World.Camera.Position) * (1 - MathF.Pow(0.01f, Time.Delta));
+				World.Camera.LookAt = lookAt;
 
-                World.Camera.FOVMultiplier = Calc.Approach(World.Camera.FOVMultiplier, targetFOV, Time.Delta / 4);
-            }
-        }
-    }
+				float targetFOV = Calc.ClampedMap(velocity.XY().Length(), MaxSpeed * 1.2f, 120, 1, 1.2f);
+
+				World.Camera.FOVMultiplier = Calc.Approach(World.Camera.FOVMultiplier, targetFOV, Time.Delta / 4);
+			}
+		}
+	}
 
 	public override void LateUpdate()
 	{
@@ -554,8 +568,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			}
 		}
 
-        //Part 3
-        LateCameraUpdate();
+		//Part 3
+		LateCameraUpdate();
 
 		// update model
 		{
@@ -623,13 +637,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		// get default values
 		cameraLookAt = cameraOriginPos;
 		cameraPosition = cameraLookAt
-			- cameraTargetForward * Utils.Lerp3(30, 60, 110, 110, cameraTargetDistance)
-			+ Vec3.UnitZ * Utils.Lerp3(1, 30, 80, 180, cameraTargetDistance);
+		               - cameraTargetForward * Utils.Lerp3(30, 60, 110, 110, cameraTargetDistance)
+		               + Vec3.UnitZ * Utils.Lerp3(1, 30, 80, 180, cameraTargetDistance);
 		cameraLookAt += Vec3.UnitZ * 12;
 
 		// inside a fixed camera zone
-		if (World.OverlapsFirst<FixedCamera>(SolidWaistTestPos) is {} fixedCamera
-		&& (cameraLookAt - fixedCamera.Position).Length() > 5)
+		if (World.OverlapsFirst<FixedCamera>(SolidWaistTestPos) is { } fixedCamera
+		 && (cameraLookAt - fixedCamera.Position).Length() > 5)
 		{
 			cameraPosition = fixedCamera.Point;
 			cameraTargetForward = new Vec3((cameraLookAt.XY() - cameraPosition.XY()).Normalized(), 0);
@@ -638,7 +652,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		// try to push out of solids if we're in them
 		else
 		{
-			var from = cameraLookAt;// - Vec3.UnitZ * (onGround ? 0 : 6);
+			var from = cameraLookAt; // - Vec3.UnitZ * (onGround ? 0 : 6);
 			var to = cameraPosition;
 			var normal = (to - from).Normalized();
 
@@ -673,10 +687,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	{
 		get
 		{
-            if (Manager.Running && CameraModeCommand.Mode == CameraModeCommand.CameraMode.Independent)
-            {
-                return Controls.Move.Value.Normalized();
-            }
+			if (Manager.Running && CameraModeCommand.Mode == CameraModeCommand.CameraMode.Independent)
+			{
+				return Controls.Move.Value.Normalized();
+			}
 
 			if (Controls.Move.Value == Vec2.Zero)
 				return Vec2.Zero;
@@ -711,7 +725,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 				mat.Color = color;
 				mat.Effects = 0;
 			}
-            mat.SilhouetteColor = color;
+			mat.SilhouetteColor = color;
 		}
 
 		Hair.Color = color;
@@ -765,7 +779,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 		// wall test
 		if (World.SolidWallCheckNearest(SolidWaistTestPos, WallPushoutDist, out var hit) ||
-			World.SolidWallCheckNearest(SolidHeadTestPos, WallPushoutDist, out hit))
+		    World.SolidWallCheckNearest(SolidHeadTestPos, WallPushoutDist, out hit))
 		{
 			// feather state handling
 			if (resolveImpact && stateMachine.State == States.Feather && tFeatherWallBumpCooldown <= 0 && !(Controls.Climb.Down && TryClimb()))
@@ -853,7 +867,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		AddPlatformVelocity(false);
 		CancelGroundSnap();
 
-		for (int i = 0; i < 16; i ++)
+		for (int i = 0; i < 16; i++)
 		{
 			var dir = new Vec3(Calc.AngleToVector((i / 16f) * MathF.Tau), 0);
 			World.Request<Dust>().Init(Position + dir * 8, new Vec3(velocity.XY() * 0.5f, 10) - dir * 50, 0x666666);
@@ -924,8 +938,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private bool ClimbCheckAt(Vec3 offset, out WallHit hit)
 	{
 		if (World.SolidWallCheckClosestToNormal(SolidWaistTestPos + offset, ClimbCheckDist, -new Vec3(targetFacing, 0), out hit)
-		&& (RelativeMoveInput == Vec2.Zero || Vec2.Dot(hit.Normal.XY().Normalized(), RelativeMoveInput) <= -0.5f)
-		&& ClimbNormalCheck(hit.Normal))
+		 && (RelativeMoveInput == Vec2.Zero || Vec2.Dot(hit.Normal.XY().Normalized(), RelativeMoveInput) <= -0.5f)
+		 && ClimbNormalCheck(hit.Normal))
 			return true;
 		return false;
 	}
@@ -968,7 +982,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 	private bool WallJumpCheck()
 	{
 		if (Controls.Jump.Pressed
-		&& World.SolidWallCheckClosestToNormal(SolidWaistTestPos, ClimbCheckDist, -new Vec3(targetFacing, 0), out var hit))
+		 && World.SolidWallCheckClosestToNormal(SolidWaistTestPos, ClimbCheckDist, -new Vec3(targetFacing, 0), out var hit))
 		{
 			Controls.Jump.ConsumePress();
 			Position += (hit.Pushout * (WallPushoutDist / ClimbCheckDist));
@@ -1053,8 +1067,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 				if (actor is NPC npc && npc.InteractEnabled)
 				{
 					if ((Position - npc.Position).LengthSquared() < npc.InteractRadius * npc.InteractRadius &&
-						Vec2.Dot((npc.Position - Position).XY(), targetFacing) > 0 &&
-						MathF.Abs(npc.Position.Z - Position.Z) < 2)
+					    Vec2.Dot((npc.Position - Position).XY(), targetFacing) > 0 &&
+					    MathF.Abs(npc.Position.Z - Position.Z) < 2)
 					{
 						npc.IsPlayerOver = true;
 
@@ -1115,8 +1129,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 					var d = 4;
 
 					if (input != Vec2.Zero &&
-						!World.SolidRayCast(Position + new Vec3(input, 1) * d, -Vec3.UnitZ, 8, out var hit) &&
-						!World.SolidRayCast(Position + new Vec3(0, 0, d), new Vec3(input, 0), d, out hit))
+					    !World.SolidRayCast(Position + new Vec3(input, 1) * d, -Vec3.UnitZ, 8, out var hit) &&
+					    !World.SolidRayCast(Position + new Vec3(0, 0, d), new Vec3(input, 0), d, out hit))
 					{
 						var left = Calc.AngleToVector(Calc.Angle(input) + 0.3f);
 						var right = Calc.AngleToVector(Calc.Angle(input) - 0.3f);
@@ -1126,13 +1140,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 						{
 							while (World.SolidRayCast(Position + new Vec3(left, 1) * d, -Vec3.UnitZ, 8, out hit) && count++ < 10)
 								left = Calc.AngleToVector(Calc.Angle(left) - 0.1f);
-							input = Calc.AngleToVector(Calc.Angle(left) + 0.1f); ;
+							input = Calc.AngleToVector(Calc.Angle(left) + 0.1f);
 						}
 						else if (World.SolidRayCast(Position + new Vec3(right, 1) * d, -Vec3.UnitZ, 8, out hit))
 						{
 							while (World.SolidRayCast(Position + new Vec3(right, 1) * d, -Vec3.UnitZ, 8, out hit) && count++ < 10)
 								right = Calc.AngleToVector(Calc.Angle(right) + 0.1f);
-							input = Calc.AngleToVector(Calc.Angle(right) - 0.1f); ;
+							input = Calc.AngleToVector(Calc.Angle(right) - 0.1f);
 						}
 					}
 				}
@@ -1257,7 +1271,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 				Calc.Approach(ref velocity.Z, MaxFall, Gravity * mult * Time.Delta);
 				tHoldJump = 0;
-
 			}
 		}
 
@@ -1423,7 +1436,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			velocity = new Vec3(dir, 0) * DashSpeed;
 		else
 			velocity = new Vec3(dir, .4f).Normalized() * DashSpeed;
-
 	}
 
 	#endregion
@@ -1438,7 +1450,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		Model.Play("Skid", true);
 		Audio.Play(Sfx.sfx_skid, Position);
 
-		for (int i = 0; i < 5; i ++)
+		for (int i = 0; i < 5; i++)
 			World.Request<Dust>().Init(Position + new Vec3(targetFacing, 0) * i, new Vec3(-targetFacing, 0.0f).Normalized() * 50, 0x666666);
 	}
 
@@ -1608,7 +1620,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 				if (Time.OnInterval(0.3f))
 					Audio.Play(Sfx.sfx_handhold, Position);
 			}
-
 		}
 		// perform corner lerp
 		else
@@ -1763,13 +1774,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		{
 			Save.CurrentRecord.CompletedSubMaps.Add(World.Entry.Map);
 			Game.Instance.Goto(new Transition()
-			{
-				Mode = Transition.Modes.Pop,
-				ToPause = true,
-				ToBlack = new SpotlightWipe(),
-				StopMusic = true,
-				Saving = true
-			});
+			                   {
+				                   Mode = Transition.Modes.Pop,
+				                   ToPause = true,
+				                   ToBlack = new SpotlightWipe(),
+				                   StopMusic = true,
+				                   Saving = true
+			                   });
 		}
 		else
 		{
@@ -2055,11 +2066,11 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		{
 			var entry = World.Entry with { Reason = World.EntryReasons.Respawned };
 			Game.Instance.Goto(new Transition()
-			{
-				Mode = Transition.Modes.Replace,
-				Scene = () => new World(entry),
-				ToBlack = new AngledWipe()
-			});
+			                   {
+				                   Mode = Transition.Modes.Replace,
+				                   Scene = () => new World(entry),
+				                   ToBlack = new AngledWipe(),
+			                   });
 		}
 	}
 
@@ -2152,23 +2163,23 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			if (World.Entry.Submap || !Assets.Maps.ContainsKey(cassette.Map))
 			{
 				Game.Instance.Goto(new Transition()
-				{
-					Mode = Transition.Modes.Pop,
-					ToPause = true,
-					ToBlack = new SpotlightWipe(),
-					StopMusic = true
-				});
+				                   {
+					                   Mode = Transition.Modes.Pop,
+					                   ToPause = true,
+					                   ToBlack = new SpotlightWipe(),
+					                   StopMusic = true,
+				                   });
 			}
 			else
 			{
 				Game.Instance.Goto(new Transition()
-				{
-					Mode = Transition.Modes.Push,
-					Scene = () => new World(new(cassette.Map, string.Empty, true, World.EntryReasons.Entered)),
-					ToPause = true,
-					ToBlack = new SpotlightWipe(),
-					StopMusic = true
-				});
+				                   {
+					                   Mode = Transition.Modes.Push,
+					                   Scene = () => new World(new(cassette.Map, string.Empty, true, World.EntryReasons.Entered)),
+					                   ToPause = true,
+					                   ToBlack = new SpotlightWipe(),
+					                   StopMusic = true,
+				                   });
 			}
 		}
 
@@ -2182,7 +2193,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		holdJumpSpeed = velocity.Z;
 		tHoldJump = .1f;
 		autoJump = true;
-
 	}
 
 	private void StCassetteExit()
@@ -2235,7 +2245,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			var ease = drawOrbsEase;
 			var col = Math.Floor(ease * 10) % 2 == 0 ? Hair.Color : Color.White;
 			var s = (ease < 0.5f) ? (0.5f + ease) : (Ease.CubeOut(1 - (ease - 0.5f) * 2));
-			for (int i = 0; i < 8; i ++)
+			for (int i = 0; i < 8; i++)
 			{
 				var rot = (i / 8f + ease * 0.25f) * MathF.Tau;
 				var rad = Ease.CubeOut(ease) * 16;
@@ -2298,8 +2308,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 			return;
 
 		if (tPlatformVelocityStorage < 0 || value.Z >= velocity.Z
-		|| value.XY().LengthSquared() + .1f >= velocity.XY().LengthSquared()
-		|| (value.XY() != Vec2.Zero && Vec2.Dot(value.XY().Normalized(), velocity.XY().Normalized()) < .5f))
+		                                 || value.XY().LengthSquared() + .1f >= velocity.XY().LengthSquared()
+		                                 || (value.XY() != Vec2.Zero && Vec2.Dot(value.XY().Normalized(), velocity.XY().Normalized()) < .5f))
 		{
 			platformVelocity = value;
 			tPlatformVelocityStorage = .1f;
