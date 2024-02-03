@@ -31,14 +31,6 @@ public class TASMod
 
     public static void Update()
     {
-        if (TASControls.StartStop.Pressed)
-        {
-            if (Manager.Running)
-                Manager.DisableRun();
-            else
-                Manager.EnableRun();
-        }
-
         if (TASControls.Freecam.Pressed)
         {
             Save.Instance.Freecam = Save.Instance.Freecam switch
@@ -79,6 +71,16 @@ public class TASMod
         }
 
         Manager.Update();
+
+        if (TASControls.StartStop.Pressed)
+        {
+            if (Manager.Running)
+                Manager.DisableRun();
+            else
+                Manager.EnableRun();
+        }
+
+        InfoHUD.Update();
     }
 
     private static TimeSpan ActualDuration;

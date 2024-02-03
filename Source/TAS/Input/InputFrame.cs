@@ -48,7 +48,10 @@ public record InputFrame
                 Line = studioLine,
                 Frames = frames,
                 FrameOffset = frameOffset,
+
                 Actions = Actions.None,
+                Angle = null,
+                Magnitude = 1.0f,
             };;
             return true;
         }

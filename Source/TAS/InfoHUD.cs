@@ -1,12 +1,35 @@
 using Celeste64.TAS.Input;
 using Celeste64.TAS.Util;
 using ImGuiNET;
+using NativeFileDialogSharp;
 
 namespace Celeste64.TAS;
 
 public static class InfoHUD
 {
     private static bool editingCustomTemplate = false;
+    private static Vec3? lastPlayerPosition = null;
+
+    [EnableRun]
+    private static void Start()
+    {
+        lastPlayerPosition = null;
+    }
+
+    public static void Update()
+    {
+        if (!Manager.IsPaused() && Game.Scene is World world)
+        {
+            var player = world.Get<Player>();
+            if (player != null)
+            {
+                lastPlayerPosition = player.Position;
+            } else
+            {
+                lastPlayerPosition = null;
+            }
+        }
+    }
 
     public static void RenderGUI()
     {
@@ -17,11 +40,24 @@ public static class InfoHUD
         ImGui.Begin("Info HUD", ImGuiWindowFlags.MenuBar);
 
         if (ImGui.BeginMenuBar()) {
+            if (ImGui.BeginMenu("File"))
+            {
+                ImGui.Text($"Current: {InputController.TasFilePath}");
+
+                if (ImGui.MenuItem("Open"))
+                {
+                    var result = Dialog.FileOpen("tas", Directory.GetCurrentDirectory());
+                    if (result.IsOk)
+                        InputController.StudioTasFilePath = result.Path;
+                }
+                ImGui.EndMenu();
+            }
+
             if (ImGui.BeginMenu("Settings"))
             {
                 bool showInputs = Save.Instance.InfoHudShowInputs;
                 bool showWorld = Save.Instance.InfoHudShowWorld;
-                bool showCustom = Save.Instance.InfoHudShowWorld;
+                bool showCustom = Save.Instance.InfoHudShowCustom;
                 int decimals = Save.Instance.InfoHudDecimals;
                 float fontSize = Save.Instance.InfoHudFontSize;
 
@@ -83,7 +119,11 @@ public static class InfoHUD
             if (player != null)
             {
                 ImGui.Text($"Pos: {player.Position.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Position.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Position.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
-                ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                ImGui.Text($"Spd: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                if (lastPlayerPosition == null)
+                    ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                else
+                    ImGui.Text($"Vel: {((player.Position.X - lastPlayerPosition.Value.X) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)} {((player.Position.Y - lastPlayerPosition.Value.Y) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)} {((player.Position.Z - lastPlayerPosition.Value.Z) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)}");
                 ImGui.Text(string.Empty);
 
                 List<string> statues = new();
@@ -95,7 +135,13 @@ public static class InfoHUD
                     statues.Add($"DashCD({player.tDashCooldown.ToFrames()})");
                 if (player.tNoDashJump > 0)
                     statues.Add($"DashJumpCD({player.tNoDashJump.ToFrames()})");
-                if (player.TryClimb())
+
+                // Taken from player.TryClimb()
+                bool canClimb = player.ClimbCheckAt(Vec3.Zero, out var wall);
+                if (!canClimb && player.Velocity.Z > 0 && !player.onGround && player.stateMachine.State != Player.States.Climbing)
+                    canClimb = player.ClimbCheckAt(Vec3.UnitZ * 4, out wall);
+
+                if (canClimb)
                     statues.Add($"CanClimb");
                 if (world.SolidWallCheckClosestToNormal(player.SolidWaistTestPos, Player.ClimbCheckDist, -new Vec3(player.targetFacing, 0), out _))
                     statues.Add($"CanWallJump");

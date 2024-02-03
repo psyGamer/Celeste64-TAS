@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace Celeste64.TAS.Input;
 
-public class InputHelper
+public static class InputHelper
 {
     private static readonly Dictionary<string, VirtualStick> originalSticks = new();
     private static readonly Dictionary<string, VirtualButton> originalButtons = new();
@@ -88,8 +88,10 @@ public class InputHelper
         Controls.Pause = originalButtons["Pause"];
     }
 
+    private static readonly MethodInfo m_VirtualButton_Update = typeof(VirtualButton).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException();
     public static void FeedInputs(InputFrame? input)
     {
+        // Update binding state
         foreach (var binding in allButtonBindings)
         {
             if (input.Actions.HasFlag(binding.action))
@@ -99,7 +101,8 @@ public class InputHelper
                 else if (binding.IsPressed)
                     binding.IsPressed = false; // 2nd+ frame
                 binding.IsReleased = false;
-            } else
+            }
+            else
             {
                 if (binding is { IsReleased: false, IsDown: true })
                     binding.IsReleased = true; // 1st frame
@@ -107,6 +110,7 @@ public class InputHelper
                     binding.IsReleased = false; // 2nd+ frame
                 binding.IsPressed = false;
             }
+
             binding.IsDown = input.Actions.HasFlag(binding.action);
         }
 
@@ -127,13 +131,25 @@ public class InputHelper
             up.Value = MathF.Max(0.0f, moveVector.Y);
             down.Value = MathF.Max(0.0f, -moveVector.Y);
         }
+
+        // Update all buttons/sticks, to forward the updated binding state
+        m_VirtualButton_Update.Invoke(Jump, []);
+        m_VirtualButton_Update.Invoke(Dash, []);
+        m_VirtualButton_Update.Invoke(Climb, []);
+        m_VirtualButton_Update.Invoke(Confirm, []);
+        m_VirtualButton_Update.Invoke(Cancel, []);
+        m_VirtualButton_Update.Invoke(Pause, []);
+        m_VirtualButton_Update.Invoke(Move.Horizontal.Positive, []);
+        m_VirtualButton_Update.Invoke(Move.Horizontal.Negative, []);
+        m_VirtualButton_Update.Invoke(Move.Vertical.Positive, []);
+        m_VirtualButton_Update.Invoke(Move.Vertical.Negative, []);
     }
 
     private record TASButtonBinding(Actions action) : VirtualButton.IBinding
     {
         public bool IsPressed { get; set; }
-        public bool IsDown { get;  set; }
-        public bool IsReleased { get;  set; }
+        public bool IsDown { get; set; }
+        public bool IsReleased { get; set; }
 
         public float Value => IsDown ? 1.0f : 0.0f;
         public float ValueNoDeadzone => IsDown ? 1.0f : 0.0f;
