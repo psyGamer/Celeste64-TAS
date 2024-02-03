@@ -1,3 +1,4 @@
+using Celeste64.TAS.Render;
 using System.Diagnostics;
 using ModelEntry = (Celeste64.Actor Actor, Celeste64.Model Model);
 
@@ -779,6 +780,15 @@ public class World : Scene
 
 			ApplyPostEffects();
 		}
+
+        // debug render
+        {
+            var batch3d = new Batcher3D();
+            foreach (var actor in All<IHaveDebugRender>())
+                (actor as IHaveDebugRender).RenderDebug(batch3d);
+            batch3d.Render(ref state);
+            batch3d.Clear();
+        }
 
 		// ui
 		{

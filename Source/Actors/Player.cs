@@ -1,13 +1,14 @@
 
 using Celeste64.TAS;
 using Celeste64.TAS.Input.Commands;
+using Celeste64.TAS.Render;
 
 namespace Celeste64;
 
 /// <summary>
 /// Welcome to the monolithic player class! This time only 2300 lines ;)
 /// </summary>
-public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow
+public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow, IHaveDebugRender
 {
 	#region Constants
 
@@ -2285,7 +2286,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		}
 	}
 
-	#endregion
+    public void RenderDebug(Batcher3D populate)
+    {
+        var transform = Matrix.CreateTranslation(-Position) * Matrix.CreateRotationZ(targetFacing.Angle()) * Matrix.CreateTranslation(Position);
+        populate.Line(Position, Position + new Vec3(0, 0, 0.1f), Color.Blue, transform);
+    }
+
+    #endregion
 
 	#region Platform Riding / Solid Checks
 

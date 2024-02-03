@@ -1,4 +1,6 @@
 
+using Celeste64.TAS.Render;
+
 namespace Celeste64;
 
 /// <summary>
@@ -23,6 +25,14 @@ public interface IHaveSprites
 public interface IHaveUI
 {
 	public void RenderUI(Batcher batch, Rect bounds);
+}
+
+/// <summary>
+/// TAS: Actors with this interface will cast a small point shadow downwards
+/// </summary>
+public interface IHaveDebugRender
+{
+    public void RenderDebug(Batcher3D populate);
 }
 
 /// <summary>
