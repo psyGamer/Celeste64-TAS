@@ -1,6 +1,7 @@
 using Celeste64.TAS.Input;
 using Celeste64.TAS.Util;
 using ImGuiNET;
+using NativeFileDialogSharp;
 
 namespace Celeste64.TAS;
 
@@ -39,6 +40,19 @@ public static class InfoHUD
         ImGui.Begin("Info HUD", ImGuiWindowFlags.MenuBar);
 
         if (ImGui.BeginMenuBar()) {
+            if (ImGui.BeginMenu("File"))
+            {
+                ImGui.Text($"Current: {InputController.TasFilePath}");
+
+                if (ImGui.MenuItem("Open"))
+                {
+                    var result = Dialog.FileOpen("tas", Directory.GetCurrentDirectory());
+                    if (result.IsOk)
+                        InputController.StudioTasFilePath = result.Path;
+                }
+                ImGui.EndMenu();
+            }
+
             if (ImGui.BeginMenu("Settings"))
             {
                 bool showInputs = Save.Instance.InfoHudShowInputs;
