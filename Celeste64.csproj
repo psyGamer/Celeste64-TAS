@@ -20,6 +20,7 @@
 
         <PackageReference Include="MonoMod.RuntimeDetour" Version="25.1.0-prerelease.2" />
         <PackageReference Include="ImGui.NET" Version="1.90.1.1" />
+        <PackageReference Include="EmbeddedBuildProperty" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup Condition="($(RuntimeIdentifier) == '' and $([MSBuild]::IsOSPlatform('Linux'))) or $(RuntimeIdentifier) == 'linux-x64'">

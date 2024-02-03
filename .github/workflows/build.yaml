@@ -28,12 +28,12 @@ jobs:
         with:
           dotnet-version: '8.x'
       - name: Build
-        run: dotnet publish -r win-x64 -c Release
+        run: dotnet publish -r win-x64 -c Release "-p:EmbeddedBuildProperty=ModVersion=${{env.CURRENT_COMMIT}}-dev"
       - name: Copy Content
         run: cp -r Content bin/Release/net8.0/win-x64/publish
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Celeste64-TAS-$(git rev-parse --short "$GITHUB_SHA")
+          name: Celeste64-TAS-${{env.CURRENT_COMMIT}}
           path: bin/Release/net8.0/win-x64/publish
 

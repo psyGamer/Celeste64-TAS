@@ -23,11 +23,11 @@ jobs:
         with:
           dotnet-version: '8.x'
       - name: Build Windows x86-64
-        run: dotnet publish -c Release -r win-x64
+        run: dotnet publish -c Release -r win-x64 "-p:EmbeddedBuildProperty=ModVersion=${{env.CURRENT_TAG}}"
       - name: Build Linux x86-64
-        run: dotnet publish -c Release -r linux-x64
+        run: dotnet publish -c Release -r linux-x64 "-p:EmbeddedBuildProperty=ModVersion=${{env.CURRENT_TAG}}"
       - name: Build macOS x86-64
-        run: dotnet publish -c Release -r osx-x64
+        run: dotnet publish -c Release -r osx-x64 "-p:EmbeddedBuildProperty=ModVersion=${{env.CURRENT_TAG}}"
       - name: Copy Content
         run: |
           cp -r Content bin/Release/net8.0/win-x64/publish
