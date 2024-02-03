@@ -79,6 +79,8 @@ public class TASMod
             else
                 Manager.EnableRun();
         }
+
+        InfoHUD.Update();
     }
 
     private static TimeSpan ActualDuration;

@@ -7,6 +7,28 @@ namespace Celeste64.TAS;
 public static class InfoHUD
 {
     private static bool editingCustomTemplate = false;
+    private static Vec3? lastPlayerPosition = null;
+
+    [EnableRun]
+    private static void Start()
+    {
+        lastPlayerPosition = null;
+    }
+
+    public static void Update()
+    {
+        if (!Manager.IsPaused() && Game.Scene is World world)
+        {
+            var player = world.Get<Player>();
+            if (player != null)
+            {
+                lastPlayerPosition = player.Position;
+            } else
+            {
+                lastPlayerPosition = null;
+            }
+        }
+    }
 
     public static void RenderGUI()
     {
@@ -83,7 +105,11 @@ public static class InfoHUD
             if (player != null)
             {
                 ImGui.Text($"Pos: {player.Position.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Position.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Position.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
-                ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                ImGui.Text($"Spd: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                if (lastPlayerPosition == null)
+                    ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                else
+                    ImGui.Text($"Vel: {((player.Position.X - lastPlayerPosition.Value.X) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)} {((player.Position.Y - lastPlayerPosition.Value.Y) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)} {((player.Position.Z - lastPlayerPosition.Value.Z) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)}");
                 ImGui.Text(string.Empty);
 
                 List<string> statues = new();
