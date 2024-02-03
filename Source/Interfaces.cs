@@ -32,7 +32,7 @@ public interface IHaveUI
 /// </summary>
 public interface IHaveDebugRender
 {
-    public void RenderDebug(Batcher3D populate);
+    public void RenderDebug(Batcher3D batch);
 }
 
 /// <summary>
