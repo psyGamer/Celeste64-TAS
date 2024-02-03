@@ -1549,7 +1549,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 		// only change the input direction based on the camera when we stop moving
 		// so if we keep holding a direction, we keep moving the same way (even if it's flipped in the perspective)
-		if (MathF.Abs(Controls.Move.Value.X) < .5f)
+        // TAS: Dont do any flipping while a TAS is running with independent camera mode
+		if ((!Manager.Running || CameraModeCommand.Mode == CameraModeCommand.CameraMode.Dependent) && MathF.Abs(Controls.Move.Value.X) < .5f)
 			climbInputSign = (Vec2.Dot(targetFacing, cameraTargetForward.XY().Normalized()) < -.4f) ? -1 : 1;
 
 		Vec2 inputTranslated = Controls.Move.Value;
