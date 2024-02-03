@@ -65,4 +65,4 @@ jobs:
             - **Windows:** 10 or later, x64
             - **Linux:** [Distro support list](https://github.com/dotnet/core/blob/main/release-notes/8.0/supported-os.md), x64
             - **Mac:** Monterey or later, x64 Intel-based or Apple Silicon with Rosetta
-          files: Celeste64-SpeedrunUtils-*.zip
+          files: Celeste64-TAS-*.zip
