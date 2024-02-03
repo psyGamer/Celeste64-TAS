@@ -155,6 +155,19 @@ public class Batcher3D
         dirty = true;
     }
 
+    public void Box(Vec3 min, Vec3 max, Color color) => Box(min, max, color, Matrix.Identity);
+    public void Box(Vec3 min, Vec3 max, Color color, Matrix transform) =>
+        Box(min with { Z = max.Z },
+            min with { X = max.X, Z = max.Z },
+            min,
+            min with { X = max.X },
+
+            max with { X = min.X },
+            max,
+            max with { X = min.X, Z = min.Z },
+            max with { Z = min.Z },
+            color, transform);
+
     /// <summary>
     /// Renders a box of a solid color.
     /// </summary>

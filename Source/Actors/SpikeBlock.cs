@@ -109,5 +109,7 @@ public class SpikeBlock : Attacher, IHaveModels, IHaveDebugRender
 
         batch.Line(WorldBounds.Min with { X = WorldBounds.Max.X }, WorldBounds.Max with { Z = WorldBounds.Min.Z }, Color.Red);
         batch.Line(WorldBounds.Min with { Z = WorldBounds.Max.Z }, WorldBounds.Max with { X = WorldBounds.Min.X }, Color.Red);
+
+        batch.Box(WorldBounds.Min, WorldBounds.Max, Color.Red * 0.5f);
     }
 }
