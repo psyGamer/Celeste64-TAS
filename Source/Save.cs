@@ -82,6 +82,8 @@ public class Save
     // TAS Settings
     public FreecamMode Freecam { get; set; } = FreecamMode.Disabled;
     public bool SimplifiedGraphics { get; set; } = false;
+    public bool Hitboxes { get; set; } = false;
+    public bool InvisiblePlayer { get; set; } = false;
     // Info HUD
     public bool InfoHudShowInputs { get; set; } = true;
     public bool InfoHudShowWorld { get; set; } = true;

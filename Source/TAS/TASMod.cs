@@ -73,6 +73,18 @@ public class TASMod
             }
         }
 
+        if (TASControls.Hitboxes.Pressed)
+        {
+            Save.Instance.Hitboxes = !Save.Instance.Hitboxes;
+            Save.Instance.SyncSettings();
+        }
+
+        if (TASControls.InvisiblePlayer.Pressed)
+        {
+            Save.Instance.InvisiblePlayer = !Save.Instance.InvisiblePlayer;
+            Save.Instance.SyncSettings();
+        }
+
         Manager.Update();
 
         if (TASControls.StartStop.Pressed)

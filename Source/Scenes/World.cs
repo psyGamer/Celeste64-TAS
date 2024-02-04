@@ -1,5 +1,7 @@
 using Celeste64.Source.Scenes.SubMenus;
 using Celeste64.TAS;
+using Celeste64.TAS.Render;
+
 using System.Diagnostics;
 using ModelEntry = (Celeste64.Actor Actor, Celeste64.Model Model);
 namespace Celeste64;
@@ -802,6 +804,16 @@ public class World : Scene
             RenderModels(ref state, models, ModelFlags.StrawberryGetEffect);
 
             ApplyPostEffects();
+        }
+
+        // render colliders
+        if (Save.Instance.Hitboxes)
+        {
+            var batch3d = new Batcher3D();
+            foreach (var actor in All<IHaveRenderCollider>())
+                (actor as IHaveRenderCollider).RenderCollider(batch3d);
+            batch3d.Render(ref state);
+            batch3d.Clear();
         }
 
         // ui
