@@ -436,7 +436,6 @@ public class Batcher3D
             MeshIndexStart = 0,
             MeshIndexCount = indexCount,
         };
-        Log.Info($"Rendered {indexCount}");
         call.Submit();
         state.Calls++;
         state.Triangles += indexCount / 3;
