@@ -136,6 +136,7 @@ public class Game : Module
     }
 
     private static MethodInfo m_Input_Step = typeof(Input).GetMethod("Step", BindingFlags.Static | BindingFlags.NonPublic) ?? throw new Exception("Input missing Step");
+
     public override void Update()
     {
         TASMod.Update();
@@ -149,7 +150,7 @@ public class Game : Module
             player.Update();
             player.LateUpdate();
             return;
-        };
+        }
 
         // update top scene
         if (scenes.TryPeek(out var scene))
@@ -210,20 +211,20 @@ public class Game : Module
             // perform transition
             switch (transition.Mode)
             {
-                case Transition.Modes.Replace:
-                    Debug.Assert(transition.Scene != null);
-                    if (scenes.Count > 0)
-                        scenes.Pop();
-                    scenes.Push(transition.Scene());
-                    break;
-                case Transition.Modes.Push:
-                    Debug.Assert(transition.Scene != null);
-                    scenes.Push(transition.Scene());
-                    audioBeatCounter = 0;
-                    break;
-                case Transition.Modes.Pop:
+            case Transition.Modes.Replace:
+                Debug.Assert(transition.Scene != null);
+                if (scenes.Count > 0)
                     scenes.Pop();
-                    break;
+                scenes.Push(transition.Scene());
+                break;
+            case Transition.Modes.Push:
+                Debug.Assert(transition.Scene != null);
+                scenes.Push(transition.Scene());
+                audioBeatCounter = 0;
+                break;
+            case Transition.Modes.Pop:
+                scenes.Pop();
+                break;
             }
 
             // don't let the game sit in a sceneless place
