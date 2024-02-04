@@ -11,14 +11,14 @@ public class World : Scene
     public enum EntryReasons { Entered, Returned, Respawned }
     public readonly record struct EntryInfo(string Map, string CheckPoint, bool Submap, EntryReasons Reason);
 
-	public Camera Camera = new();
-	public Rng Rng = new(0);
-	public float HitStun = 0;
-	public bool Paused = false;
-	public EntryInfo Entry = new();
-	public readonly GridPartition<Solid> SolidGrid = new(200, 100);
-	public float GeneralTimer = 0;
-	public float DeathPlane = -100;
+    public Camera Camera = new();
+    public Rng Rng = new(0);
+    public float HitStun = 0;
+    public bool Paused = false;
+    public EntryInfo Entry = new();
+    public readonly GridPartition<Solid> SolidGrid = new(200, 100);
+    public float GeneralTimer = 0;
+    public float DeathPlane = -100;
 
     public readonly List<Actor> Actors = [];
     private readonly List<Actor> adding = [];
@@ -27,31 +27,29 @@ public class World : Scene
     private readonly Dictionary<Type, Queue<Actor>> recycled = [];
     public readonly List<Type> trackedTypes = []; // TAS: publicized
 
-	private readonly List<ModelEntry> models = [];
-	private readonly List<Sprite> sprites = [];
+    private readonly List<ModelEntry> models = [];
+    private readonly List<Sprite> sprites = [];
 
-	private Target? postTarget;
-	private readonly Material postMaterial = new();
-	private readonly Batcher batch = new();
-	private readonly List<Skybox> skyboxes = [];
-	private readonly SpriteRenderer spriteRenderer = new();
+    private Target? postTarget;
+    private readonly Material postMaterial = new();
+    private readonly Batcher batch = new();
+    private readonly List<Skybox> skyboxes = [];
+    private readonly SpriteRenderer spriteRenderer = new();
 
-	// Pause Menu, only drawn when actually paused
-	private readonly Menu pauseMenu = new();
-	private AudioHandle pauseSnapshot;
+    // Pause Menu, only drawn when actually paused
+    private readonly Menu pauseMenu = new();
+    private AudioHandle pauseSnapshot;
 
     // Used for mouse offset
     public Vec2 nextMousePosition;//CelesteTAS: publicised
     public Vec2 prevMousePosition; //CelesteTAS: publicised
     public Vec2 MouseDelta => Input.Mouse.Position - prevMousePosition;
 
-	// makes the Strawberry UI wiggle when one is collected
-	private float strawbCounterWiggle = 0;
-	private float strawbCounterCooldown = 0;
-	private float strawbCounterEase = 0;
-	private int strawbCounterWas;
-
-	private bool IsInEndingArea => Get<Player>() is { } player && Overlaps<EndingArea>(player.Position);
+    // makes the Strawberry UI wiggle when one is collected
+    private float strawbCounterWiggle = 0;
+    private float strawbCounterCooldown = 0;
+    private float strawbCounterEase = 0;
+    private int strawbCounterWas;
 
     private bool IsInEndingArea => Get<Player>() is { } player && Overlaps<EndingArea>(player.Position);
     private bool IsPauseEnabled
@@ -64,26 +62,26 @@ public class World : Scene
         }
     }
 
-	private readonly Stopwatch debugUpdTimer = new();
-	private readonly Stopwatch debugRndTimer = new();
-	private readonly Stopwatch debugFpsTimer = new();
-	private TimeSpan lastDebugRndTime;
-	private int debugUpdateCount;
-	public static bool DebugDraw { get; private set; } = false;
+    private readonly Stopwatch debugUpdTimer = new();
+    private readonly Stopwatch debugRndTimer = new();
+    private readonly Stopwatch debugFpsTimer = new();
+    private TimeSpan lastDebugRndTime;
+    private int debugUpdateCount;
+    public static bool DebugDraw { get; private set; } = false;
 
     public World(EntryInfo entry)
     {
         Entry = entry;
 
-		var stopwatch = Stopwatch.StartNew();
-		var map = Assets.Maps[entry.Map];
+        var stopwatch = Stopwatch.StartNew();
+        var map = Assets.Maps[entry.Map];
 
-		Camera.NearPlane = 20;
-		Camera.FarPlane = 800;
-		Camera.FOVMultiplier = 1;
+        Camera.NearPlane = 20;
+        Camera.FarPlane = 800;
+        Camera.FOVMultiplier = 1;
 
-		strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
-		strawbCounterWiggle = 0;
+        strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
+        strawbCounterWiggle = 0;
 
         // setup pause menu
         {
@@ -125,8 +123,10 @@ public class World : Scene
             })));
         }
 
-			//CelesteTAS
-			pauseMenu.Add(new Menu.Option("TASSettings", () => inSettingsMenu = true));
+        // environment
+        {
+            if (map.SnowAmount > 0)
+                Add(new Snow(map.SnowAmount, map.SnowWind));
 
             if (!string.IsNullOrEmpty(map.Skybox))
             {
@@ -143,44 +143,18 @@ public class World : Scene
                 }
             }
 
-			pauseMenu.Add(new Menu.Spacer());
-			pauseMenu.Add(new Menu.Slider("BGM", 0, 10, () => Save.Instance.MusicVolume, Save.Instance.SetMusicVolume));
-			pauseMenu.Add(new Menu.Slider("SFX", 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
-			pauseMenu.Add(new Menu.Spacer());
-			pauseMenu.Add(new Menu.Option("Save & Quit", () => Game.Instance.Goto(new Transition()
-			                                                                      {
-				                                                                      Mode = Transition.Modes.Replace,
-				                                                                      Scene = () => new Overworld(true),
-				                                                                      FromPause = true,
-				                                                                      ToPause = true,
-				                                                                      ToBlack = new SlideWipe(),
-				                                                                      Saving = true
-			                                                                      })));
-		}
+            Music = $"event:/music/{map.Music}";
+            Ambience = $"event:/sfx/ambience/{map.Ambience}";
+        }
 
-		// environment
-		{
-			if (map.SnowAmount > 0)
-				Add(new Snow(map.SnowAmount, map.SnowWind));
+        // load content
+        map.Load(this);
 
-			if (!string.IsNullOrEmpty(map.Skybox))
-			{
-				// single skybox
-				if (Assets.Textures.TryGetValue($"skyboxes/{map.Skybox}", out var skybox))
-				{
-					skyboxes.Add(new(skybox));
-				}
-				// group
-				else
-				{
-					while (Assets.Textures.TryGetValue($"skyboxes/{map.Skybox}_{skyboxes.Count}", out var nextSkybox))
-						skyboxes.Add(new(nextSkybox));
-				}
-			}
+        Log.Info($"Loaded Map '{Entry.Map}' in {stopwatch.ElapsedMilliseconds}ms");
 
-			Music = $"event:/music/{map.Music}";
-			Ambience = $"event:/sfx/ambience/{map.Ambience}";
-		}
+        //CelesteTAS
+        Manager.world = this;
+    }
 
     public override void Disposed()
     {
@@ -193,9 +167,9 @@ public class World : Scene
             ResolveChanges();
         }
 
-		//CelesteTAS
-		Manager.world = this;
-	}
+        postTarget?.Dispose();
+        postTarget = null;
+    }
 
     public T Request<T>() where T : Actor, IRecycle, new()
     {
@@ -774,45 +748,45 @@ public class World : Scene
             }
         }
 
-		// render solids
-		RenderModels(ref state, models, ModelFlags.Terrain);
+        // render solids
+        RenderModels(ref state, models, ModelFlags.Terrain);
 
-		// render silhouettes
-		{
-			var it = state;
-			it.DepthCompare = DepthCompare.Greater;
-			it.DepthMask = false;
-			it.Silhouette = true;
-			RenderModels(ref it, models, ModelFlags.Silhouette);
-			state.Triangles = it.Triangles;
-			state.Calls = it.Calls;
-		}
+        // render silhouettes
+        {
+            var it = state;
+            it.DepthCompare = DepthCompare.Greater;
+            it.DepthMask = false;
+            it.Silhouette = true;
+            RenderModels(ref it, models, ModelFlags.Silhouette);
+            state.Triangles = it.Triangles;
+            state.Calls = it.Calls;
+        }
 
-		// render main models
-		RenderModels(ref state, models, ModelFlags.Default);
+        // render main models
+        RenderModels(ref state, models, ModelFlags.Default);
 
-		// perform post processing effects
-		ApplyPostEffects();
+        // perform post processing effects
+        ApplyPostEffects();
 
-		// render alpha threshold transparent stuff
-		// {
-		// 	state.CutoutMode = true;
-		// 	RenderModels(ref state, models, ModelFlags.Cutout);
-		// 	state.CutoutMode = false;
-		// }
+        // render alpha threshold transparent stuff
+        // {
+        // 	state.CutoutMode = true;
+        // 	RenderModels(ref state, models, ModelFlags.Cutout);
+        // 	state.CutoutMode = false;
+        // }
 
-		// render 2d sprites
-		{
-			spriteRenderer.Render(ref state, sprites, false);
-			spriteRenderer.Render(ref state, sprites, true);
-		}
+        // render 2d sprites
+        {
+            spriteRenderer.Render(ref state, sprites, false);
+            spriteRenderer.Render(ref state, sprites, true);
+        }
 
-		// render partially transparent models... must be sorted etc
-		{
-			state.DepthMask = false;
-			RenderModels(ref state, models, ModelFlags.Transparent);
-			state.DepthMask = true;
-		}
+        // render partially transparent models... must be sorted etc
+        {
+            state.DepthMask = false;
+            RenderModels(ref state, models, ModelFlags.Transparent);
+            state.DepthMask = true;
+        }
 
         // strawberry collect effect
         if (Camera.Target != null && models.Any((it) => it.Model.Flags.Has(ModelFlags.StrawberryGetEffect)))
@@ -820,17 +794,17 @@ public class World : Scene
             var img = Assets.Subtextures["splash"];
             var orig = new Vec2(img.Width, img.Height) / 2;
 
-			Camera.Target.Clear(Color.Black, 1, 0, ClearMask.Depth);
+            Camera.Target.Clear(Color.Black, 1, 0, ClearMask.Depth);
 
-			batch.Rect(Camera.Target.Bounds, Color.Black * 0.90f);
-			batch.Image(img, Camera.Target.Bounds.Center, orig, Vec2.One, 0, Color.White);
-			batch.Render(Camera.Target);
-			batch.Clear();
+            batch.Rect(Camera.Target.Bounds, Color.Black * 0.90f);
+            batch.Image(img, Camera.Target.Bounds.Center, orig, Vec2.One, 0, Color.White);
+            batch.Render(Camera.Target);
+            batch.Clear();
 
-			RenderModels(ref state, models, ModelFlags.StrawberryGetEffect);
+            RenderModels(ref state, models, ModelFlags.StrawberryGetEffect);
 
-			ApplyPostEffects();
-		}
+            ApplyPostEffects();
+        }
 
         // render colliders
         if (Save.Instance.Hitboxes)
@@ -848,8 +822,8 @@ public class World : Scene
             var bounds = new Rect(0, 0, target.Width, target.Height);
             var font = Assets.Fonts.First().Value;
 
-			foreach (var actor in All<IHaveUI>())
-				(actor as IHaveUI)!.RenderUI(batch, bounds);
+            foreach (var actor in All<IHaveUI>())
+                (actor as IHaveUI)!.RenderUI(batch, bounds);
 
             // pause menu
             if (Paused)
@@ -867,10 +841,10 @@ public class World : Scene
                 var fps = (int) (1000 / frameMs);
                 debugFpsTimer.Restart();
 
-				batch.Text(font, $"Draws: {state.Calls}, Tris: {state.Triangles}, Upd: {debugUpdateCount}", bounds.BottomLeft, new Vec2(0, 1), Color.Red);
-				batch.Text(font, $"u:{updateMs:0.00}ms | r:{renderMs:0.00}ms | f:{frameMs:0.00}ms / {fps}fps", bounds.BottomLeft - new Vec2(0, font.LineHeight), new Vec2(0, 1), Color.Red);
-				batch.Text(font, $"m: {Entry.Map}, c: {Entry.CheckPoint}, s: {Entry.Submap}", bounds.BottomLeft - new Vec2(0, font.LineHeight * 2), new Vec2(0, 1), Color.Red);
-			}
+                batch.Text(font, $"Draws: {state.Calls}, Tris: {state.Triangles}, Upd: {debugUpdateCount}", bounds.BottomLeft, new Vec2(0, 1), Color.Red);
+                batch.Text(font, $"u:{updateMs:0.00}ms | r:{renderMs:0.00}ms | f:{frameMs:0.00}ms / {fps}fps", bounds.BottomLeft - new Vec2(0, font.LineHeight), new Vec2(0, 1), Color.Red);
+                batch.Text(font, $"m: {Entry.Map}, c: {Entry.CheckPoint}, s: {Entry.Submap}", bounds.BottomLeft - new Vec2(0, font.LineHeight * 2), new Vec2(0, 1), Color.Red);
+            }
 
             // stats
             {
@@ -904,21 +878,21 @@ public class World : Scene
             {
                 var scroll = -new Vec2(1.25f, 0.9f) * (float) (Time.Duration.TotalSeconds) * 0.05f;
 
-				batch.PushBlend(BlendMode.Add);
-				batch.Image(Assets.Textures["overworld/overlay"],
-					bounds.TopLeft, bounds.TopRight, bounds.BottomRight, bounds.BottomLeft,
-					scroll + new Vec2(0, 0), scroll + new Vec2(1, 0), scroll + new Vec2(1, 1), scroll + new Vec2(0, 1),
-					Color.White * 0.10f);
-				batch.PopBlend();
-			}
+                batch.PushBlend(BlendMode.Add);
+                batch.Image(Assets.Textures["overworld/overlay"],
+                    bounds.TopLeft, bounds.TopRight, bounds.BottomRight, bounds.BottomLeft,
+                    scroll + new Vec2(0, 0), scroll + new Vec2(1, 0), scroll + new Vec2(1, 1), scroll + new Vec2(0, 1),
+                    Color.White * 0.10f);
+                batch.PopBlend();
+            }
 
-			batch.Render(Camera.Target);
-			batch.Clear();
-		}
+            batch.Render(Camera.Target);
+            batch.Clear();
+        }
 
-		lastDebugRndTime = debugRndTimer.Elapsed;
-		debugRndTimer.Stop();
-	}
+        lastDebugRndTime = debugRndTimer.Elapsed;
+        debugRndTimer.Stop();
+    }
 
     private void ApplyPostEffects()
     {
@@ -932,27 +906,27 @@ public class World : Scene
             }
             postTarget.Clear(Color.Black);
 
-			var postCam = Camera with { Target = postTarget };
+            var postCam = Camera with { Target = postTarget };
 
-			// apply post fx
-			postMaterial.SetShader(Assets.Shaders["Edge"]);
-			if (postMaterial.Shader?.Has("u_depth") ?? false)
-				postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
-			if (postMaterial.Shader?.Has("u_pixel") ?? false)
-				postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
-			if (postMaterial.Shader?.Has("u_edge") ?? false)
-				postMaterial.Set("u_edge", new Color(0x110d33));
-			batch.PushMaterial(postMaterial);
-			batch.Image(Camera.Target.Attachments[0], Color.White);
-			batch.Render(postTarget);
-			batch.Clear();
+            // apply post fx
+            postMaterial.SetShader(Assets.Shaders["Edge"]);
+            if (postMaterial.Shader?.Has("u_depth") ?? false)
+                postMaterial.Set("u_depth", Camera.Target.Attachments[1]);
+            if (postMaterial.Shader?.Has("u_pixel") ?? false)
+                postMaterial.Set("u_pixel", new Vec2(1.0f / postCam.Target.Width, 1.0f / postCam.Target.Height));
+            if (postMaterial.Shader?.Has("u_edge") ?? false)
+                postMaterial.Set("u_edge", new Color(0x110d33));
+            batch.PushMaterial(postMaterial);
+            batch.Image(Camera.Target.Attachments[0], Color.White);
+            batch.Render(postTarget);
+            batch.Clear();
 
-			// draw post back to the gameplay
-			batch.Image(postTarget, Color.White);
-			batch.Render(Camera.Target);
-			batch.Clear();
-		}
-	}
+            // draw post back to the gameplay
+            batch.Image(postTarget, Color.White);
+            batch.Render(Camera.Target);
+            batch.Clear();
+        }
+    }
 
     private void RenderModels(ref RenderState state, List<ModelEntry> models, ModelFlags flags)
     {
@@ -961,8 +935,8 @@ public class World : Scene
             if (!it.Model.Flags.Has(flags))
                 continue;
 
-			state.ModelMatrix = it.Model.Transform * it.Actor.Matrix;
-			it.Model.Render(ref state);
-		}
-	}
+            state.ModelMatrix = it.Model.Transform * it.Actor.Matrix;
+            it.Model.Render(ref state);
+        }
+    }
 }
