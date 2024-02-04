@@ -135,6 +135,8 @@ public static class InfoHUD
                     statues.Add($"DashCD({player.tDashCooldown.ToFrames()})");
                 if (player.tNoDashJump > 0)
                     statues.Add($"DashJumpCD({player.tNoDashJump.ToFrames()})");
+                if (player.tNoSkidJump > 0)
+                    statues.Add($"SkidJumpCD({player.tNoSkidJump.ToFrames()})");
 
                 // Taken from player.TryClimb()
                 bool canClimb = player.ClimbCheckAt(Vec3.Zero, out var wall);

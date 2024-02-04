@@ -1428,7 +1428,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 	#region Skidding State
 
-	private float tNoSkidJump;
+    public float tNoSkidJump; // TAS: publicized
 
 	private void StSkiddingEnter()
 	{
