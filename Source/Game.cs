@@ -145,8 +145,8 @@ public class Game : Module
             if (!scenes.TryPeek(out var camscene) || camscene is not World world) return;
             var player = world.Get<Player>();
             if (player == null) return;
-            world.prevMousePosition = world.nextMousePosition;
-            world.nextMousePosition = Input.Mouse.Position;
+            Manager.prevMousePosition = Manager.nextMousePosition;
+            Manager.nextMousePosition = Input.Mouse.Position;
             //TODO: Refactor Camera Logic out of Player
             player.Update();
             player.LateUpdate();

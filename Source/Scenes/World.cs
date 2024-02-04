@@ -42,11 +42,6 @@ public class World : Scene
 
     private static TASSettingsMenu? tassettingsmenu;
 
-    // Used for mouse offset
-    public Vec2 nextMousePosition; //CelesteTAS: publicised
-    public Vec2 prevMousePosition; //CelesteTAS: publicised
-    public Vec2 MouseDelta => Input.Mouse.Position - prevMousePosition;
-
     // makes the Strawberry UI wiggle when one is collected
     private float strawbCounterWiggle = 0;
     private float strawbCounterCooldown = 0;
@@ -327,8 +322,8 @@ public class World : Scene
             Log.Info($"Reloaded {x} shaders in {a} actors");
         }
 
-        prevMousePosition = nextMousePosition;
-        nextMousePosition = Input.Mouse.Position;
+        Manager.prevMousePosition = Manager.nextMousePosition;
+        Manager.nextMousePosition = Input.Mouse.Position;
 
         // update audio
         Audio.SetListener(Camera);

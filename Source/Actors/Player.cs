@@ -284,9 +284,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
             {
                 //if the mouse moves too much, it means, the Game reset the mouse somewhere
                 //the camera would behave weirdly, if this was not there
-                if (World.MouseDelta.LengthSquared() > 10000) return;
-                Manager.FreeCamRotation.X += World.MouseDelta.X * Time.Delta * FreecamRotateSpeed;
-                Manager.FreeCamRotation.Y += World.MouseDelta.Y * Time.Delta * FreecamRotateSpeed;
+                //TODO: find a way to limit Mouse Movement on Load?
+                if (Manager.MouseDelta.LengthSquared() > 10000) return;
+                Manager.FreeCamRotation.X += Manager.MouseDelta.X * Time.Delta * FreecamRotateSpeed;
+                Manager.FreeCamRotation.Y += Manager.MouseDelta.Y * Time.Delta * FreecamRotateSpeed;
                 Manager.FreeCamRotation.X %= 360.0f * Calc.DegToRad;
                 Manager.FreeCamRotation.Y = Math.Clamp(Manager.FreeCamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
             }

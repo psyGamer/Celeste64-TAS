@@ -11,12 +11,6 @@ internal class DisableRunAttribute : Attribute;
 
 public static class Manager
 {
-    public static World? world;
-    public static Vec3 FreeCamPosition;
-    public static Vec2 FreeCamRotation;
-    public static float FreeCamDistance = 50f;
-
-
     public enum State
     {
         Disabled,
@@ -32,6 +26,14 @@ public static class Manager
     public static readonly InputController Controller = new();
 
     internal static Save.LevelRecord TASLevelRecord = new();
+
+    public static Vec3 FreeCamPosition;
+    public static Vec2 FreeCamRotation;
+    public static float FreeCamDistance = 50f;
+
+    public static Vec2 nextMousePosition;
+    public static Vec2 prevMousePosition;
+    public static Vec2 MouseDelta => Foster.Framework.Input.Mouse.Position - prevMousePosition;
 
     static Manager()
     {
