@@ -39,22 +39,22 @@ internal static class StringExtensions
         return LineBreakRegex.Replace(text, replacement);
     }
 
-    public static bool IsNullOrEmpty(this string text)
+    public static bool IsNullOrEmpty(this string? text)
     {
         return string.IsNullOrEmpty(text);
     }
 
-    public static bool IsNotNullOrEmpty(this string text)
+    public static bool IsNotNullOrEmpty(this string? text)
     {
         return !string.IsNullOrEmpty(text);
     }
 
-    public static bool IsNullOrWhiteSpace(this string text)
+    public static bool IsNullOrWhiteSpace(this string? text)
     {
         return string.IsNullOrWhiteSpace(text);
     }
 
-    public static bool IsNotNullOrWhiteSpace(this string text)
+    public static bool IsNotNullOrWhiteSpace(this string? text)
     {
         return !string.IsNullOrWhiteSpace(text);
     }
