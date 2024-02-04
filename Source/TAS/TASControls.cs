@@ -25,6 +25,7 @@ public static class TASControls
     public static readonly VirtualButton CameraZoomIn = new("CameraZoomIn");
     public static readonly VirtualButton CameraZoomOut = new("CameraZoomOut");
 
+    public static readonly VirtualButton InvisiblePlayer = new("InvisiblePlayer");
     public static readonly VirtualButton Freecam = new("Freecam");
     public static readonly VirtualButton ToggleInfoGUI = new("ToggleInfoGUI");
 
@@ -52,6 +53,9 @@ public static class TASControls
 
         SimplifiedGraphics.Clear();
         SimplifiedGraphics.Add(Keys.N);
+
+        InvisiblePlayer.Clear();
+        InvisiblePlayer.Add(Keys.I);
 
         Freecam.Clear();
         Freecam.Add(Keys.M);

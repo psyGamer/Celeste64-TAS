@@ -2272,6 +2272,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 	public void CollectModels(List<(Actor Actor, Model Model)> populate)
 	{
+        if (Save.Instance.InvisiblePlayer) return;
+
 		if ((World.Camera.Position - (Position + Vec3.UnitZ * 8)).LengthSquared() > World.Camera.NearPlane * World.Camera.NearPlane)
 		{
 			if (drawHair)

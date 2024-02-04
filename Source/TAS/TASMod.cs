@@ -79,6 +79,12 @@ public class TASMod
             Save.Instance.SyncSettings();
         }
 
+        if (TASControls.InvisiblePlayer.Pressed)
+        {
+            Save.Instance.InvisiblePlayer = !Save.Instance.InvisiblePlayer;
+            Save.Instance.SyncSettings();
+        }
+
         Manager.Update();
 
         if (TASControls.StartStop.Pressed)
