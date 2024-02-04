@@ -967,7 +967,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         Dead = true;
     }
 
-    private bool ClimbCheckAt(Vec3 offset, out WallHit hit)
+    public bool ClimbCheckAt(Vec3 offset, out WallHit hit)
     {
         if (World.SolidWallCheckClosestToNormal(SolidWaistTestPos + offset, ClimbCheckDist, -new Vec3(targetFacing, 0), out hit)
          && (RelativeMoveInput == Vec2.Zero || Vec2.Dot(hit.Normal.XY().Normalized(), RelativeMoveInput) <= -0.5f)
