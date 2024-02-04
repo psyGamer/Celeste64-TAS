@@ -106,7 +106,7 @@ public class Menu
 	public string DownSound = Sfx.ui_move;
 
 	public bool IsInMainMenu => submenus.Count <= 0;
-	private Menu CurrentMenu => submenus.Count > 0 ? submenus.Peek() : this;
+	public Menu CurrentMenu => submenus.Count > 0 ? submenus.Peek() : this;
 
 	public Vec2 Size
 	{
@@ -152,6 +152,13 @@ public class Menu
 		items.Add(item);
 		return this;
 	}
+
+    public Menu? Pop() {
+        if (submenus.TryPop(out Menu menu)) {
+            return menu;
+        }
+        return null;
+    }
 
 	protected void PushSubMenu(Menu menu)
 	{

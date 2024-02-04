@@ -410,14 +410,13 @@ public class World : Scene
 		// unpause
 		else
 		{
-			if ((Controls.Pause.Pressed || Controls.Cancel.Pressed) && pauseMenu.IsInMainMenu)
-			{
-				pauseMenu.CloseSubMenus();
-				SetPaused(false);
-				Audio.Play(Sfx.ui_unpause);
-			}
-			else
-				pauseMenu.Update();
+            if (Controls.Pause.Pressed || (Controls.Cancel.Pressed && pauseMenu.IsInMainMenu)) {
+                pauseMenu.CloseSubMenus();
+                SetPaused(false);
+                Audio.Play(Sfx.ui_unpause);
+            }
+            else
+                pauseMenu.Update();
 		}
 
 		debugUpdTimer.Stop();
