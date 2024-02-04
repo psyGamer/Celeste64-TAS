@@ -156,8 +156,6 @@ public class World : Scene
 
         Log.Info($"Loaded Map '{Entry.Map}' in {stopwatch.ElapsedMilliseconds}ms");
 
-        //CelesteTAS
-        Manager.world = this;
     }
 
     public override void Disposed()
