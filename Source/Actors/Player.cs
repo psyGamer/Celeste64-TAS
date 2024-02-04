@@ -321,22 +321,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
             }
             else
             {
-                bool fw = TASControls.FreeCamCameraForwad.Down;
-                bool rg = TASControls.FreeCamCameraRight.Down;
-                bool bw = TASControls.FreeCamCameraBackwards.Down;
-                bool lf = TASControls.FreeCamCameraLeft.Down;
-
-                float yval = 0;
-                yval -= fw ? 1 : 0;
-                yval += bw ? 1 : 0;
-                float xval = 0;
-                xval += rg ? 1 : 0;
-                xval -= lf ? 1 : 0;
-
-                Manager.FreeCamPosition.X -= yval * cameraForward.X * FreecamMoveSpeed;
-                Manager.FreeCamPosition.Y -= yval * cameraForward.Y * FreecamMoveSpeed;
-                Manager.FreeCamPosition.X -= xval * cameraRight.X * FreecamMoveSpeed;
-                Manager.FreeCamPosition.Y -= xval * cameraRight.Y * FreecamMoveSpeed;
+                Manager.FreeCamPosition.X -= TASControls.FreeCamMove.Value.Y * cameraForward.X * FreecamMoveSpeed;
+                Manager.FreeCamPosition.Y -= TASControls.FreeCamMove.Value.Y * cameraForward.Y * FreecamMoveSpeed;
+                Manager.FreeCamPosition.X -= TASControls.FreeCamMove.Value.X * cameraRight.X * FreecamMoveSpeed;
+                Manager.FreeCamPosition.Y -= TASControls.FreeCamMove.Value.X * cameraRight.Y * FreecamMoveSpeed;
 
                 if (Input.Keyboard.Down(Keys.Space))
                     Manager.FreeCamPosition.Z += FreecamMoveSpeed;

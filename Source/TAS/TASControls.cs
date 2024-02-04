@@ -29,10 +29,7 @@ public static class TASControls
     public static readonly VirtualButton Freecam = new("Freecam");
     public static readonly VirtualButton ToggleInfoGUI = new("ToggleInfoGUI");
 
-    public static readonly VirtualButton FreeCamCameraForwad = new("FreeCamCameraForwad");
-    public static readonly VirtualButton FreeCamCameraBackwards = new("FreeCamCameraBackwards");
-    public static readonly VirtualButton FreeCamCameraRight = new("FreeCamCameraRight");
-    public static readonly VirtualButton FreeCamCameraLeft = new("FreeCamCameraLeft");
+    public static readonly VirtualStick FreeCamMove = new("FreeCamMove", VirtualAxis.Overlaps.TakeNewer, 0.35f);
 
     public static void Load()
     {
@@ -65,14 +62,10 @@ public static class TASControls
         Freecam.Clear();
         Freecam.Add(Keys.M);
 
-        FreeCamCameraForwad.Clear();
-        FreeCamCameraForwad.Add(Keys.W);
-        FreeCamCameraBackwards.Clear();
-        FreeCamCameraBackwards.Add(Keys.S);
-        FreeCamCameraRight.Clear();
-        FreeCamCameraRight.Add(Keys.D);
-        FreeCamCameraLeft.Clear();
-        FreeCamCameraLeft.Add(Keys.A);
+        FreeCamMove.Clear();
+        FreeCamMove.AddLeftJoystick(0);
+        FreeCamMove.AddDPad(0);
+        FreeCamMove.Add(Keys.A, Keys.D, Keys.W, Keys.S);
 
         ToggleInfoGUI.Clear();
         ToggleInfoGUI.Add(Keys.F12);
