@@ -8,7 +8,7 @@ namespace Celeste64;
 /// <summary>
 /// Welcome to the monolithic player class! This time only 2300 lines ;)
 /// </summary>
-public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow, IHaveDebugRender
+public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow, IHaveRenderCollider
 {
 	#region Constants
 
@@ -2301,7 +2301,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		}
 	}
 
-    public void RenderDebug(Batcher3D batch)
+    public void RenderCollider(Batcher3D batch)
     {
         var transform = Matrix.CreateTranslation(-Position) * Matrix.CreateRotationZ(targetFacing.Angle()) * Matrix.CreateTranslation(Position);
 

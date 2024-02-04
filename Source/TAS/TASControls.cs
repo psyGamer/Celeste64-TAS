@@ -47,6 +47,9 @@ public static class TASControls
         FastForward.Clear();
         FastForward.Add(Keys.RightShift);
 
+        Hitboxes.Clear();
+        Hitboxes.Add(Keys.B);
+
         SimplifiedGraphics.Clear();
         SimplifiedGraphics.Add(Keys.N);
 

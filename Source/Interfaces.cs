@@ -28,11 +28,11 @@ public interface IHaveUI
 }
 
 /// <summary>
-/// TAS: Actors with this interface will cast a small point shadow downwards
+/// TAS: Actors with this interface can draw their colliders
 /// </summary>
-public interface IHaveDebugRender
+public interface IHaveRenderCollider
 {
-    public void RenderDebug(Batcher3D batch);
+    public void RenderCollider(Batcher3D batch);
 }
 
 /// <summary>

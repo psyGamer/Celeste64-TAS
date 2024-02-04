@@ -787,11 +787,12 @@ public class World : Scene
 			ApplyPostEffects();
 		}
 
-        // debug render
+        // render colliders
+        if (Save.Instance.Hitboxes)
         {
             var batch3d = new Batcher3D();
-            foreach (var actor in All<IHaveDebugRender>())
-                (actor as IHaveDebugRender).RenderDebug(batch3d);
+            foreach (var actor in All<IHaveRenderCollider>())
+                (actor as IHaveRenderCollider).RenderCollider(batch3d);
             batch3d.Render(ref state);
             batch3d.Clear();
         }

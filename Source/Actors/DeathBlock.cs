@@ -3,9 +3,9 @@ using Celeste64.TAS.Render;
 
 namespace Celeste64;
 
-public class DeathBlock : Actor, IHaveDebugRender
+public class DeathBlock : Actor, IHaveRenderCollider
 {
-    public void RenderDebug(Batcher3D batch)
+    public void RenderCollider(Batcher3D batch)
     {
         batch.Line(WorldBounds.Min, WorldBounds.Min with { X = WorldBounds.Max.X }, Color.Red);
         batch.Line(WorldBounds.Min, WorldBounds.Min with { Y = WorldBounds.Max.Y }, Color.Red);
