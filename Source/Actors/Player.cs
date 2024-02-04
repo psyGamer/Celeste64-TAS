@@ -1,13 +1,14 @@
 
 using Celeste64.TAS;
 using Celeste64.TAS.Input.Commands;
+using Celeste64.TAS.Render;
 
 namespace Celeste64;
 
 /// <summary>
 /// Welcome to the monolithic player class! This time only 2300 lines ;)
 /// </summary>
-public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow
+public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow, IHaveRenderCollider
 {
 	#region Constants
 
@@ -2147,20 +2148,20 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 		if (cassette != null)
 		{
-			if (World.Entry.Submap) 
+			if (World.Entry.Submap)
 			{
-				Game.Instance.Goto(new Transition() 
+				Game.Instance.Goto(new Transition()
 				{
 					Mode = Transition.Modes.Pop,
 					ToPause = true,
 					ToBlack = new SpotlightWipe(),
 					StopMusic = true
 				});
-			} 
+			}
 			//Saves and quits game if you collect a cassette with an empty map property when you're not in a submap
-			else if (!Assets.Maps.ContainsKey(cassette.Map)) 
+			else if (!Assets.Maps.ContainsKey(cassette.Map))
 			{
-				Game.Instance.Goto(new Transition() 
+				Game.Instance.Goto(new Transition()
 				{
 					Mode = Transition.Modes.Replace,
 					Scene = () => new Overworld(true),
@@ -2271,6 +2272,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
 	public void CollectModels(List<(Actor Actor, Model Model)> populate)
 	{
+        if (Save.Instance.InvisiblePlayer) return;
+
 		if ((World.Camera.Position - (Position + Vec3.UnitZ * 8)).LengthSquared() > World.Camera.NearPlane * World.Camera.NearPlane)
 		{
 			if (drawHair)
@@ -2300,7 +2303,31 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 		}
 	}
 
-	#endregion
+    public void RenderCollider(Batcher3D batch)
+    {
+        var transform = Matrix.CreateTranslation(-Position) * Matrix.CreateRotationZ(targetFacing.Angle()) * Matrix.CreateTranslation(Position);
+
+        // Ground ray cast
+        batch.Line(Position + Vec3.UnitZ * 5, Position - Vec3.UnitZ * 0.01f, Color.Blue);
+
+        // Wall collision
+        batch.Torus(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow);
+        batch.Torus(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow);
+        batch.Disk(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
+        batch.Disk(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
+
+        // Death collision
+        batch.Cube(SolidWaistTestPos, Color.Red, thickness: 0.2f);
+
+        // Pickup colliders
+        foreach (var actor in World.All<IPickup>())
+        {
+            batch.Sphere(actor.Position, (actor as IPickup)!.PickupRadius, 12, Color.Green * 0.5f);
+        }
+        batch.Cube(Position, Color.Green, thickness: 0.2f);
+    }
+
+    #endregion
 
 	#region Platform Riding / Solid Checks
 
