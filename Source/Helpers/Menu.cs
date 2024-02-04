@@ -106,7 +106,7 @@ public class Menu
 	public string DownSound = Sfx.ui_move;
 
 	public bool IsInMainMenu => submenus.Count <= 0;
-	public Menu CurrentMenu => submenus.Count > 0 ? submenus.Peek() : this;
+	public Menu CurrentMenu => submenus.Count > 0 ? submenus.Peek() : this; //TAS: publicised
 
 	public Vec2 Size
 	{
@@ -153,6 +153,7 @@ public class Menu
 		return this;
 	}
 
+    //TAS: added for Nested SubMenus
     public Menu? Pop() {
         if (submenus.TryPop(out Menu menu)) {
             return menu;
