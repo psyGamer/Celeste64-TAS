@@ -137,6 +137,11 @@ public class Save
 		SyncSettings();
 	}
 
+    public void ToggleSimplifiedGraphics()
+    {
+        SimplifiedGraphics = !SimplifiedGraphics;
+    }
+
 	public void ToggleZGuide()
 	{
 		ZGuide = !ZGuide;
