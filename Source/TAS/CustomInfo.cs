@@ -118,6 +118,7 @@ public static class CustomInfo {
                         (MethodRegex.Match(memberNames.First()) is {Success: true} match &&
                          type.GetMethodInfo(match.Groups[1].Value) is {IsStatic: true})
                     )) {
+                    foundValid = true;
                     return FormatValue(GetMemberValue(type, null, memberNames), helperMethod, decimals);
                 }
 
