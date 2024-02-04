@@ -1,4 +1,5 @@
 
+using Celeste64.TAS;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -41,7 +42,7 @@ public class Save
 	/// <summary>
 	/// Gets the Record for the current Level.
 	/// </summary>
-	public static LevelRecord CurrentRecord => Instance.GetOrMakeRecord(Instance.LevelID);
+	public static LevelRecord CurrentRecord => Manager.Running ? Manager.TASLevelRecord : Instance.GetOrMakeRecord(Instance.LevelID);
 
 	/// <summary>
 	/// The last level that was entered
@@ -81,6 +82,8 @@ public class Save
     // TAS Settings
     public FreecamMode Freecam { get; set; } = FreecamMode.Disabled;
     public bool SimplifiedGraphics { get; set; } = false;
+    public bool Hitboxes { get; set; } = false;
+    public bool InvisiblePlayer { get; set; } = false;
     // Info HUD
     public bool InfoHudShowInputs { get; set; } = true;
     public bool InfoHudShowWorld { get; set; } = true;

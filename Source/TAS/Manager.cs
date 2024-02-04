@@ -12,8 +12,12 @@ internal class DisableRunAttribute : Attribute;
 public static class Manager
 {
 	public static World? world;
+    public static Vec3 FreeCamPosition;
+    public static Vec2 FreeCamRotation;
+    public static float FreeCamDistance = 50f;
 
-	public enum State
+
+    public enum State
 	{
 		Disabled,
 		Running, Paused, FrameAdvance,
@@ -27,11 +31,13 @@ public static class Manager
 
 	public static readonly InputController Controller = new();
 
-	static Manager()
-	{
-		AttributeUtils.CollectMethods<EnableRunAttribute>();
-		AttributeUtils.CollectMethods<DisableRunAttribute>();
-	}
+    internal static Save.LevelRecord TASLevelRecord = new();
+
+    static Manager()
+    {
+        AttributeUtils.CollectMethods<EnableRunAttribute>();
+        AttributeUtils.CollectMethods<DisableRunAttribute>();
+    }
 
 	public static void EnableRun()
 	{
@@ -44,9 +50,8 @@ public static class Manager
 		Controller.Clear();
 		Controller.RefreshInputs();
 
-		// Controller.Inputs.ForEach(i => Log.Info($"input {i}"));
-		// Controller.Commands.ForEach(p => Log.Info($"command {p.Value}@{p.Key}"));
-	}
+        TASLevelRecord.ID = string.Empty;
+    }
 
 	public static void DisableRun()
 	{
@@ -58,15 +63,16 @@ public static class Manager
 		Controller.Stop();
 	}
 
-	public static void Update()
-	{
-		CurrState = NextState;
+    public static void Update() {
+        CurrState = NextState;
+        if (!Running) return;
 
-		if (!Running) return;
+        if (Save.Instance.LevelID != TASLevelRecord.ID)
+            TASLevelRecord = new Save.LevelRecord { ID = Save.Instance.LevelID };
 
-		if (!IsPaused())
-		{
-			Controller.AdvanceFrame(out bool canPlayback);
+        if (!IsPaused())
+        {
+            Controller.AdvanceFrame(out bool canPlayback);
 
 			if (!canPlayback)
 			{
@@ -92,28 +98,19 @@ public static class Manager
 				break;
 			case State.FastForward:
 				NextState = TASControls.FastForward.Down ? State.FastForward : State.Running;
-				//Reset Camera to Dependent
-				Save.Instance.Freecam = Save.FreecamMode.Disabled;
 				break;
 			case State.FrameAdvance:
 				NextState = State.Paused;
-				//Reset Camera to Dependent
-				Save.Instance.Freecam = Save.FreecamMode.Disabled;
 				break;
 			case State.Paused:
 				if (TASControls.PauseResume.Pressed)
 				{
 					NextState = State.Running;
-					//Reset Camera to Dependent
-					Save.Instance.Freecam = Save.FreecamMode.Disabled;
 				}
 				else if (TASControls.SlowForward.Down || TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
 				{
 					NextState = State.FrameAdvance;
-					//Reset Camera to Dependent
-					Save.Instance.Freecam = Save.FreecamMode.Disabled;
 				}
-				//Reset Camera to Dependent
 				break;
 		}
 	}
