@@ -30,6 +30,14 @@ public class Batcher3D
         public readonly VertexFormat Format => VertexFormat;
     }
 
+    ~Batcher3D()
+    {
+        if (vertexPtr != IntPtr.Zero)
+            Marshal.FreeHGlobal(vertexPtr);
+        if (indexPtr != IntPtr.Zero)
+            Marshal.FreeHGlobal(indexPtr);
+    }
+
     private IntPtr vertexPtr = IntPtr.Zero;
     private int vertexCount = 0;
     private int vertexCapacity = 0;
