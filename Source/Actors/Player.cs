@@ -7,7 +7,7 @@ namespace Celeste64;
 /// <summary>
 /// Welcome to the monolithic player class! This time only 2300 lines ;)
 /// </summary>
-public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow {
+public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPointShadow, IHaveRenderCollider {
     #region Constants
 
     private const float Acceleration = 500;

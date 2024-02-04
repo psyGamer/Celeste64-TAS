@@ -141,11 +141,13 @@ public class Game : Module
         TASMod.Update();
         if (Manager.IsPaused())
         {
-            if (!scenes.TryPeek(out var camscene) || camscene is not World) return;
-            camscene.Update();
-            if (camscene is not World world) return;
+            if (!scenes.TryPeek(out var camscene) || camscene is not World world) return;
+            var player = world.Get<Player>();
+            if (player == null) return;
             world.prevMousePosition = world.nextMousePosition;
             world.nextMousePosition = Input.Mouse.Position;
+            player.Update();
+            player.LateUpdate();
             return;
         };
 
@@ -208,20 +210,20 @@ public class Game : Module
             // perform transition
             switch (transition.Mode)
             {
-            case Transition.Modes.Replace:
-                Debug.Assert(transition.Scene != null);
-                if (scenes.Count > 0)
+                case Transition.Modes.Replace:
+                    Debug.Assert(transition.Scene != null);
+                    if (scenes.Count > 0)
+                        scenes.Pop();
+                    scenes.Push(transition.Scene());
+                    break;
+                case Transition.Modes.Push:
+                    Debug.Assert(transition.Scene != null);
+                    scenes.Push(transition.Scene());
+                    audioBeatCounter = 0;
+                    break;
+                case Transition.Modes.Pop:
                     scenes.Pop();
-                scenes.Push(transition.Scene());
-                break;
-            case Transition.Modes.Push:
-                Debug.Assert(transition.Scene != null);
-                scenes.Push(transition.Scene());
-                audioBeatCounter = 0;
-                break;
-            case Transition.Modes.Pop:
-                scenes.Pop();
-                break;
+                    break;
             }
 
             // don't let the game sit in a sceneless place
