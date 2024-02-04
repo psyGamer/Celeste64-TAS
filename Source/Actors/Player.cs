@@ -963,7 +963,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         Dead = true;
     }
 
-    public bool ClimbCheckAt(Vec3 offset, out WallHit hit)
+    public bool ClimbCheckAt(Vec3 offset, out WallHit hit) // TAS: publicized
     {
         if (World.SolidWallCheckClosestToNormal(SolidWaistTestPos + offset, ClimbCheckDist, -new Vec3(targetFacing, 0), out hit)
          && (RelativeMoveInput == Vec2.Zero || Vec2.Dot(hit.Normal.XY().Normalized(), RelativeMoveInput) <= -0.5f)
@@ -972,7 +972,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         return false;
     }
 
-    public bool TryClimb() // TAS: publicized
+    private bool TryClimb()
     {
         var result = ClimbCheckAt(Vec3.Zero, out var wall);
 
@@ -1471,7 +1471,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
     #region Skidding State
 
-    private float tNoSkidJump;
+    public float tNoSkidJump; // TAS: publicized
 
     private void StSkiddingEnter()
     {
@@ -2096,7 +2096,12 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         if (!Game.Instance.IsMidTransition && drawOrbsEase > 0.30f)
         {
             var entry = World.Entry with { Reason = World.EntryReasons.Respawned };
-            Game.Instance.Goto(new Transition() { Mode = Transition.Modes.Replace, Scene = () => new World(entry), ToBlack = new AngledWipe(), });
+            Game.Instance.Goto(new Transition() 
+            { 
+                Mode = Transition.Modes.Replace,
+                Scene = () => new World(entry), 
+                ToBlack = new AngledWipe()
+                });
         }
     }
 
@@ -2188,7 +2193,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         {
             if (World.Entry.Submap)
             {
-                Game.Instance.Goto(new Transition() { Mode = Transition.Modes.Pop, ToPause = true, ToBlack = new SpotlightWipe(), StopMusic = true });
+                Game.Instance.Goto(new Transition()
+				{
+					Mode = Transition.Modes.Pop,
+					ToPause = true,
+					ToBlack = new SpotlightWipe(),
+					StopMusic = true
+				});
             }
             //Saves and quits game if you collect a cassette with an empty map property when you're not in a submap
             else if (!Assets.Maps.ContainsKey(cassette.Map))
@@ -2212,7 +2223,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                     Scene = () => new World(new(cassette.Map, string.Empty, true, World.EntryReasons.Entered)),
                     ToPause = true,
                     ToBlack = new SpotlightWipe(),
-                    StopMusic = true,
+                    StopMusic = true
                 });
             }
         }
@@ -2354,7 +2365,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         {
             batch.Sphere(actor.Position, (actor as IPickup)!.PickupRadius, 12, Color.Green * 0.5f);
         }
-
         batch.Cube(Position, Color.Green, thickness: 0.2f);
     }
 

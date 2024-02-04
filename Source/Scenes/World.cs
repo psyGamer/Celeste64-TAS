@@ -30,11 +30,12 @@ public class World : Scene
     private readonly List<ModelEntry> models = [];
     private readonly List<Sprite> sprites = [];
 
-    private Target? postTarget;
-    private readonly Material postMaterial = new();
-    private readonly Batcher batch = new();
-    private readonly List<Skybox> skyboxes = [];
-    private readonly SpriteRenderer spriteRenderer = new();
+	private Target? postTarget;
+	private readonly Material postMaterial = new();
+	private readonly Batcher batch = new();
+    private readonly Batcher3D batch3d = new();
+	private readonly List<Skybox> skyboxes = [];
+	private readonly SpriteRenderer spriteRenderer = new();
 
     // Pause Menu, only drawn when actually paused
     private readonly Menu pauseMenu = new();
@@ -801,7 +802,6 @@ public class World : Scene
         // render colliders
         if (Save.Instance.Hitboxes)
         {
-            var batch3d = new Batcher3D();
             foreach (var actor in All<IHaveRenderCollider>())
                 (actor as IHaveRenderCollider).RenderCollider(batch3d);
             batch3d.Render(ref state);

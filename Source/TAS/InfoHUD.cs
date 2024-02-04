@@ -135,6 +135,8 @@ public static class InfoHUD
                     statues.Add($"DashCD({player.tDashCooldown.ToFrames()})");
                 if (player.tNoDashJump > 0)
                     statues.Add($"DashJumpCD({player.tNoDashJump.ToFrames()})");
+                if (player.tNoSkidJump > 0)
+                    statues.Add($"SkidJumpCD({player.tNoSkidJump.ToFrames()})");
 
                 // Taken from player.TryClimb()
                 bool canClimb = player.ClimbCheckAt(Vec3.Zero, out var wall);
@@ -152,7 +154,7 @@ public static class InfoHUD
                 string timerStr = (int) Save.CurrentRecord.Time.TotalHours > 0
                     ? $"{((int) Save.CurrentRecord.Time.TotalHours):00}:{Save.CurrentRecord.Time.Minutes:00}:{Save.CurrentRecord.Time.Seconds:00}:{Save.CurrentRecord.Time.Milliseconds:000}"
                     : $"{Save.CurrentRecord.Time.Minutes:00}:{Save.CurrentRecord.Time.Seconds:00}:{Save.CurrentRecord.Time.Milliseconds:000}";
-                ImGui.Text($"[{Save.Instance.LevelID}] Timer: {timerStr}");
+                ImGui.Text($"[{Save.Instance.LevelID}] Timer: {timerStr}({((float)Save.CurrentRecord.Time.TotalSeconds).ToFrames()})");
             }
 
             ImGui.Text(string.Empty);
