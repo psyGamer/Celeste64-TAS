@@ -28,7 +28,6 @@ namespace Celeste64.Scenes.SubMenus
             {
                 Add(item);
             }
-            Add(new Menu.Option("Close", () => CloseOpen(pauseMenu)));
             if (isTopLevel)
             {
                 TopLevelMenus.Add(this);

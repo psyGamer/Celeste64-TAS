@@ -76,8 +76,7 @@ public class World : Scene
     {
         Entry = entry;
 
-        if (tassettingsmenu == null)
-        {
+        if (tassettingsmenu == null) {
             CustomSubMenu.pauseMenu = pauseMenu;
             tassettingsmenu = new TASSettingsMenu();
         }
@@ -113,9 +112,7 @@ public class World : Scene
             }));
             pauseMenu.Add(new Menu.Submenu("Options", pauseMenu, optionsMenu));
 
-            
-            foreach (CustomSubMenu menu in CustomSubMenu.TopLevelMenus)
-            {
+            foreach (CustomSubMenu menu in CustomSubMenu.TopLevelMenus) {
                 pauseMenu.Add(new Menu.Submenu(menu.Name, pauseMenu, menu));
             }
 
@@ -433,17 +430,10 @@ public class World : Scene
                     actor.LateUpdate();
         }
         // unpause
-        else
-        {
-            //handle Cancel in Update Methos
-            if ((Controls.Pause.Pressed) || (Controls.Cancel.Pressed && pauseMenu.IsInMainMenu))
-            {
-                if (pauseMenu.IsInMainMenu)
-                {
-                    SetPaused(false);
-                    Audio.Play(Sfx.ui_unpause);
-                }
-
+        else {
+            if ((Controls.Pause.Pressed || Controls.Cancel.Pressed) && pauseMenu.IsInMainMenu) {
+                SetPaused(false);
+                Audio.Play(Sfx.ui_unpause);
                 pauseMenu.CloseSubMenus();
             }
             else
