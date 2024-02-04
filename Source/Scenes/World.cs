@@ -1,4 +1,4 @@
-using Celeste64.Source.Scenes.SubMenus;
+using Celeste64.Scenes.SubMenus;
 using Celeste64.TAS;
 using Celeste64.TAS.Render;
 using System.Diagnostics;
@@ -78,6 +78,7 @@ public class World : Scene
 
         if (tassettingsmenu == null)
         {
+            CustomSubMenu.pauseMenu = pauseMenu;
             tassettingsmenu = new TASSettingsMenu();
         }
 
@@ -103,7 +104,6 @@ public class World : Scene
             optionsMenu.Add(new Menu.Slider("SFX", 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
 
             pauseMenu.Title = "Paused";
-            pauseMenu.IsInMainMenu = true;
             pauseMenu.Add(new Menu.Option("Resume", () => SetPaused(false)));
             pauseMenu.Add(new Menu.Option("Retry", () =>
             {
@@ -113,8 +113,8 @@ public class World : Scene
             }));
             pauseMenu.Add(new Menu.Submenu("Options", pauseMenu, optionsMenu));
 
-            CustomSubMenu.pauseMenu = pauseMenu;
-            foreach (CustomSubMenu menu in CustomSubMenu.SubMenus)
+            
+            foreach (CustomSubMenu menu in CustomSubMenu.TopLevelMenus)
             {
                 pauseMenu.Add(new Menu.Submenu(menu.Name, pauseMenu, menu));
             }
@@ -435,15 +435,16 @@ public class World : Scene
         // unpause
         else
         {
-            if ((Controls.Pause.Pressed || Controls.Cancel.Pressed))
+            //handle Cancel in Update Methos
+            if ((Controls.Pause.Pressed) || (Controls.Cancel.Pressed && pauseMenu.IsInMainMenu))
             {
-                if (pauseMenu.submenus.Count <= 0)
+                if (pauseMenu.IsInMainMenu)
                 {
                     SetPaused(false);
                     Audio.Play(Sfx.ui_unpause);
                 }
 
-                pauseMenu.CloseOpen();
+                pauseMenu.CloseSubMenus();
             }
             else
                 pauseMenu.Update();
@@ -608,7 +609,7 @@ public class World : Scene
             }
         }
 
-        RESULT:
+    RESULT:
         Pool.Return(solids);
         return hits;
     }

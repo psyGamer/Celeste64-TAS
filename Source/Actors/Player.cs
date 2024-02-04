@@ -315,7 +315,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                 MathF.Cos(freecamRotation.X - Calc.HalfPI));
 
             // if not currently in TAS, proceed with normal movement
-            if (Manager.CurrState == Manager.State.Disabled)
+            if (!Manager.Running)
             {
                 freecamPosition.X -= Controls.Move.Value.Y * cameraForward.X * FreecamMoveSpeed;
                 freecamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * FreecamMoveSpeed;
@@ -329,17 +329,17 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
             }
             else
             {
-                bool fw = Foster.Framework.Input.Keyboard.Down(Keys.W);
-                bool rg = Foster.Framework.Input.Keyboard.Down(Keys.A);
-                bool bw = Foster.Framework.Input.Keyboard.Down(Keys.S);
-                bool lf = Foster.Framework.Input.Keyboard.Down(Keys.D);
+                bool fw = TASControls.FreeCamCameraForwad.Down;
+                bool rg = TASControls.FreeCamCameraRight.Down;
+                bool bw = TASControls.FreeCamCameraBackwards.Down;
+                bool lf = TASControls.FreeCamCameraLeft.Down;
 
                 float yval = 0;
                 yval -= fw ? 1 : 0;
                 yval += bw ? 1 : 0;
                 float xval = 0;
-                xval -= rg ? 1 : 0;
-                xval += lf ? 1 : 0;
+                xval += rg ? 1 : 0;
+                xval -= lf ? 1 : 0;
 
                 freecamPosition.X -= yval * cameraForward.X * FreecamMoveSpeed;
                 freecamPosition.Y -= yval * cameraForward.Y * FreecamMoveSpeed;
@@ -391,10 +391,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         }
 
         // Dont run any player logic while in freecam and TAS disabled
-        if (Manager.CurrState == Manager.State.Disabled && Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
+        if (!Manager.Running && Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
 
         //cancel Update before Player Movement
-        if (Manager.CurrState == Manager.State.Paused) return;
+        if (Manager.IsPaused()) return;
 
         // don't do anything if dead
         if (stateMachine.State is States.Respawn or States.Dead or States.Cutscene)
@@ -494,59 +494,60 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
     public override void LateUpdate()
     {
-        if (Manager.CurrState == Manager.State.Paused) goto CameraLateUpdate;
-        // ground checks
+        if (!Manager.IsPaused())
         {
-            bool prevOnGround = onGround;
-            onGround = GroundCheck(out var pushout, out var normal, out _);
-            if (onGround)
-                Position += pushout;
-
-            if (tGroundSnapCooldown <= 0 && prevOnGround && !onGround)
+            // ground checks
             {
-                // try to ground snap?
-                if (World.SolidRayCast(Position, -Vec3.UnitZ, 5, out var hit) && FloorNormalCheck(hit.Normal))
+                bool prevOnGround = onGround;
+                onGround = GroundCheck(out var pushout, out var normal, out _);
+                if (onGround)
+                    Position += pushout;
+
+                if (tGroundSnapCooldown <= 0 && prevOnGround && !onGround)
                 {
-                    Position = hit.Point;
-                    onGround = GroundCheck(out _, out normal, out _);
-                }
-            }
-
-            if (onGround)
-            {
-                autoJump = false;
-                groundNormal = normal;
-                tCoyote = CoyoteTime;
-                coyoteZ = Position.Z;
-                if (tDashResetCooldown <= 0)
-                    RefillDash();
-            }
-            else
-                groundNormal = Vec3.UnitZ;
-
-            if (!prevOnGround && onGround)
-            {
-                float t = Calc.ClampedMap(previousVelocity.Z, 0, MaxFall);
-                ModelScale = Vec3.Lerp(Vec3.One, new(1.4f, 1.4f, .6f), t);
-                stateMachine.CallEvent(Events.Land);
-
-                if (!Game.Instance.IsMidTransition && !InBubble)
-                {
-                    Audio.Play(Sfx.sfx_land, Position);
-
-                    for (int i = 0; i < 16; i++)
+                    // try to ground snap?
+                    if (World.SolidRayCast(Position, -Vec3.UnitZ, 5, out var hit) && FloorNormalCheck(hit.Normal))
                     {
-                        var angle = Calc.AngleToVector((i / 16.0f) * MathF.Tau);
-                        var at = Position + new Vec3(angle, 0) * 4;
-                        var vel = (tPlatformVelocityStorage > 0 ? platformVelocity : Vec3.Zero) + new Vec3(angle, 0) * 50;
-                        World.Request<Dust>().Init(at, vel);
+                        Position = hit.Point;
+                        onGround = GroundCheck(out _, out normal, out _);
+                    }
+                }
+
+                if (onGround)
+                {
+                    autoJump = false;
+                    groundNormal = normal;
+                    tCoyote = CoyoteTime;
+                    coyoteZ = Position.Z;
+                    if (tDashResetCooldown <= 0)
+                        RefillDash();
+                }
+                else
+                    groundNormal = Vec3.UnitZ;
+
+                if (!prevOnGround && onGround)
+                {
+                    float t = Calc.ClampedMap(previousVelocity.Z, 0, MaxFall);
+                    ModelScale = Vec3.Lerp(Vec3.One, new(1.4f, 1.4f, .6f), t);
+                    stateMachine.CallEvent(Events.Land);
+
+                    if (!Game.Instance.IsMidTransition && !InBubble)
+                    {
+                        Audio.Play(Sfx.sfx_land, Position);
+
+                        for (int i = 0; i < 16; i++)
+                        {
+                            var angle = Calc.AngleToVector((i / 16.0f) * MathF.Tau);
+                            var at = Position + new Vec3(angle, 0) * 4;
+                            var vel = (tPlatformVelocityStorage > 0 ? platformVelocity : Vec3.Zero) + new Vec3(angle, 0) * 50;
+                            World.Request<Dust>().Init(at, vel);
+                        }
                     }
                 }
             }
         }
 
-        //skip here if paused
-        CameraLateUpdate:
+
         if (Save.Instance.Freecam == Save.FreecamMode.Free)
         {
             var forward = new Vec3(
@@ -1605,6 +1606,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
         // only change the input direction based on the camera when we stop moving
         // so if we keep holding a direction, we keep moving the same way (even if it's flipped in the perspective)
+        // TAS: Dont do any flipping while a TAS is running with independent camera mode
         if ((!Manager.Running || CameraModeCommand.Mode == CameraModeCommand.CameraMode.Dependent) && MathF.Abs(Controls.Move.Value.X) < .5f)
             climbInputSign = (Vec2.Dot(targetFacing, cameraTargetForward.XY().Normalized()) < -.4f) ? -1 : 1;
 

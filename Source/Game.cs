@@ -147,6 +147,7 @@ public class Game : Module
             if (player == null) return;
             world.prevMousePosition = world.nextMousePosition;
             world.nextMousePosition = Input.Mouse.Position;
+            //TODO: Refactor Camera Logic out of Player
             player.Update();
             player.LateUpdate();
             return;

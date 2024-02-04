@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Celeste64.Scenes.SubMenus;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste64.Source.Scenes.SubMenus
+namespace Celeste64.Scenes.SubMenus
 {
     internal class TASSettingsMenu : CustomSubMenu
     {

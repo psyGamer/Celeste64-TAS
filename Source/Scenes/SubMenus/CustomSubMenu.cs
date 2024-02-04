@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste64.Source.Scenes.SubMenus
+namespace Celeste64.Scenes.SubMenus
 {
     /// <summary>
     /// If you want to add Submenu, extend this class
@@ -17,8 +17,8 @@ namespace Celeste64.Source.Scenes.SubMenus
     /// </summary>
     public abstract class CustomSubMenu : Menu
     {
-        public static Menu pauseMenu;
-        public static List<Menu> SubMenus = new List<Menu>();
+        public static Menu? pauseMenu;
+        public static List<Menu> TopLevelMenus = new List<Menu>();
 
 
         public CustomSubMenu() : base()
@@ -28,11 +28,16 @@ namespace Celeste64.Source.Scenes.SubMenus
             {
                 Add(item);
             }
-            Add(new Menu.Option("Close", () => pauseMenu.CloseOpen()));
+            Add(new Menu.Option("Close", () => CloseOpen(pauseMenu)));
             if (isTopLevel)
             {
-                SubMenus.Add(this);
+                TopLevelMenus.Add(this);
             }
+        }
+
+        public static void CloseOpen(Menu pauseMenu)
+        {
+            pauseMenu.CloseSubMenus();
         }
 
 
@@ -45,14 +50,14 @@ namespace Celeste64.Source.Scenes.SubMenus
     /// Adds the Submenu to this Menu
     /// </summary>
     /// <typeparam name="T">The SubMenu you want to add</typeparam>
-    public class SubMenuItem<T> : Menu.Submenu
+    public class SubMenuOpeningOption<T> : Menu.Submenu
         where T : CustomSubMenu, new()
     {
-        public SubMenuItem(Menu of) : this(new T().Name, of, new T())
+        public SubMenuOpeningOption() : this(new T())
         {
 
         }
-        public SubMenuItem(string label, Menu? rootMenu, Menu? submenu = null) : base(label, rootMenu, submenu)
+        public SubMenuOpeningOption(Menu submenu) : base(submenu.Title, CustomSubMenu.pauseMenu, submenu)
         {
 
         }
