@@ -145,6 +145,8 @@ public class InputController
     public bool ReadFile(string filePath, int startLine = 0, int endLine = int.MaxValue, int studioLine = 0, int repeatIndex = 0, int repeatCount = 0) {
         try {
             if (!File.Exists(filePath)) {
+                // Create file if it doesn't exist
+                File.WriteAllText(filePath, string.Empty);
                 return false;
             }
 
