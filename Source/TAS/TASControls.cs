@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace Celeste64.TAS;
 
 public static class TASControls
@@ -64,29 +66,61 @@ public static class TASControls
         ToggleInfoGUI.Add(Keys.F12);
     }
 
-    public static bool IsTASControl(this VirtualButton self) =>
-        self == StartStop ||
-        self == Restart ||
-        self == FastForward ||
-        self == FastForwardComment ||
-        self == SlowForward ||
-        self == FrameAdvance ||
-        self == PauseResume ||
-        self == Hitboxes ||
-        self == TriggerHitboxes ||
-        self == SimplifiedGraphics ||
-        self == CenterCamera ||
-        self == LockCamera ||
-        self == SaveState ||
-        self == ClearState ||
-        self == InfoHud ||
-        self == FreeCamera ||
-        self == CameraUp ||
-        self == CameraDown ||
-        self == CameraLeft ||
-        self == CameraRight ||
-        self == CameraZoomIn ||
-        self == CameraZoomOut ||
-        self == FreeCamera ||
-        self == ToggleInfoGUI;
+    private static readonly MethodInfo m_VirtualButton_Update = typeof(VirtualButton).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException();
+
+    public static void Update()
+    {
+        m_VirtualButton_Update.Invoke(StartStop, []);
+        m_VirtualButton_Update.Invoke(Restart, []);
+        m_VirtualButton_Update.Invoke(FastForward, []);
+        m_VirtualButton_Update.Invoke(FastForwardComment, []);
+        m_VirtualButton_Update.Invoke(SlowForward, []);
+        m_VirtualButton_Update.Invoke(FrameAdvance, []);
+        m_VirtualButton_Update.Invoke(PauseResume, []);
+        m_VirtualButton_Update.Invoke(Hitboxes, []);
+        m_VirtualButton_Update.Invoke(TriggerHitboxes, []);
+        m_VirtualButton_Update.Invoke(SimplifiedGraphics, []);
+        m_VirtualButton_Update.Invoke(CenterCamera, []);
+        m_VirtualButton_Update.Invoke(LockCamera, []);
+        m_VirtualButton_Update.Invoke(SaveState, []);
+        m_VirtualButton_Update.Invoke(ClearState, []);
+        m_VirtualButton_Update.Invoke(InfoHud, []);
+        m_VirtualButton_Update.Invoke(FreeCamera, []);
+        m_VirtualButton_Update.Invoke(CameraUp, []);
+        m_VirtualButton_Update.Invoke(CameraDown, []);
+        m_VirtualButton_Update.Invoke(CameraLeft, []);
+        m_VirtualButton_Update.Invoke(CameraRight, []);
+        m_VirtualButton_Update.Invoke(CameraZoomIn, []);
+        m_VirtualButton_Update.Invoke(CameraZoomOut, []);
+
+        m_VirtualButton_Update.Invoke(InvisiblePlayer, []);
+        m_VirtualButton_Update.Invoke(Freecam, []);
+        m_VirtualButton_Update.Invoke(ToggleInfoGUI, []);
+    }
+
+    // public static bool IsTASControl(this VirtualButton self) =>
+    //     self == StartStop ||
+    //     self == Restart ||
+    //     self == FastForward ||
+    //     self == FastForwardComment ||
+    //     self == SlowForward ||
+    //     self == FrameAdvance ||
+    //     self == PauseResume ||
+    //     self == Hitboxes ||
+    //     self == TriggerHitboxes ||
+    //     self == SimplifiedGraphics ||
+    //     self == CenterCamera ||
+    //     self == LockCamera ||
+    //     self == SaveState ||
+    //     self == ClearState ||
+    //     self == InfoHud ||
+    //     self == FreeCamera ||
+    //     self == CameraUp ||
+    //     self == CameraDown ||
+    //     self == CameraLeft ||
+    //     self == CameraRight ||
+    //     self == CameraZoomIn ||
+    //     self == CameraZoomOut ||
+    //     self == FreeCamera ||
+    //     self == ToggleInfoGUI;
 }

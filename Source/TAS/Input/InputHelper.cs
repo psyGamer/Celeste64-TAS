@@ -88,7 +88,6 @@ public static class InputHelper
         Controls.Pause = originalButtons["Pause"];
     }
 
-    private static readonly MethodInfo m_VirtualButton_Update = typeof(VirtualButton).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException();
     public static void FeedInputs(InputFrame? input)
     {
         // Update binding state
@@ -133,16 +132,16 @@ public static class InputHelper
         }
 
         // Update all buttons/sticks, to forward the updated binding state
-        m_VirtualButton_Update.Invoke(Jump, []);
-        m_VirtualButton_Update.Invoke(Dash, []);
-        m_VirtualButton_Update.Invoke(Climb, []);
-        m_VirtualButton_Update.Invoke(Confirm, []);
-        m_VirtualButton_Update.Invoke(Cancel, []);
-        m_VirtualButton_Update.Invoke(Pause, []);
-        m_VirtualButton_Update.Invoke(Move.Horizontal.Positive, []);
-        m_VirtualButton_Update.Invoke(Move.Horizontal.Negative, []);
-        m_VirtualButton_Update.Invoke(Move.Vertical.Positive, []);
-        m_VirtualButton_Update.Invoke(Move.Vertical.Negative, []);
+        Jump.Update();
+        Dash.Update();
+        Climb.Update();
+        Confirm.Update();
+        Cancel.Update();
+        Pause.Update();
+        Move.Horizontal.Positive.Update();
+        Move.Horizontal.Negative.Update();
+        Move.Vertical.Positive.Update();
+        Move.Vertical.Negative.Update();
     }
 
     private record TASButtonBinding(Actions action) : VirtualButton.IBinding
@@ -166,4 +165,9 @@ public static class InputHelper
 
         public float ValueNoDeadzone => Value;
     }
+
+    /// A button which is still user controlled, while a TAS is running
+    public static bool IsTASControl(this VirtualButton self) => self.Bindings.Any(bind => bind is not TASButtonBinding);
+    /// A button which is hijacked by the TAS inputs
+    public static bool IsTASHijacked(this VirtualButton self) => self.Bindings.Any(bind => bind is TASButtonBinding);
 }
