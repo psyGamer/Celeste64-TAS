@@ -152,6 +152,8 @@ public static class InputHelper
 
         public float Value => IsDown ? 1.0f : 0.0f;
         public float ValueNoDeadzone => IsDown ? 1.0f : 0.0f;
+
+        public VirtualButton.ConditionFn? Enabled { get; set; }
     }
 
     private record TASAxisBinding : VirtualButton.IBinding
@@ -164,6 +166,8 @@ public static class InputHelper
         public float LastValue { get; set; }
 
         public float ValueNoDeadzone => Value;
+
+        public VirtualButton.ConditionFn? Enabled { get; set; }
     }
 
     /// A button which is hijacked by the TAS inputs
