@@ -135,7 +135,6 @@ public class Game : Module
 			Music.Stop();
 	}
 
-    private static MethodInfo m_Input_Step = typeof(Input).GetMethod("Step", BindingFlags.Static | BindingFlags.NonPublic) ?? throw new Exception("Input missing Step");
 	public override void Update()
 	{
         // NOTE: Everything else is handled inside the TASMod hooks

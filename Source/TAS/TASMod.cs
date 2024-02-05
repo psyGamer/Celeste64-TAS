@@ -11,9 +11,6 @@ public class TASMod
     private static Hook? on_App_Tick_Update;
     private static Hook? on_Input_Step;
 
-    private static Hook? on_Time_Advance;
-    private static Hook? on_VirtualButton_Update;
-
     public static void Initialize()
     {
         CommandAttribute.CollectMethods();
@@ -21,9 +18,6 @@ public class TASMod
         il_App_Tick = new ILHook(typeof(App).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), IL_App_Tick);
         on_App_Tick_Update = new Hook(typeof(App).GetMethod("<Tick>g__Update|69_0", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_App_Tick_Update);
         on_Input_Step = new Hook(typeof(Foster.Framework.Input).GetMethod("Step", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Input_Step);
-
-        on_Time_Advance = new Hook(typeof(Time).GetMethod(nameof(Time.Advance), BindingFlags.Public | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Time_Advance);
-        // on_VirtualButton_Update = new Hook(typeof(VirtualButton).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException(), On_VirtualButton_Update);
     }
 
     public static void Deinitialize()
@@ -31,9 +25,6 @@ public class TASMod
         il_App_Tick?.Dispose();
         on_App_Tick_Update?.Dispose();
         on_Input_Step?.Dispose();
-
-        on_Time_Advance?.Dispose();
-        on_VirtualButton_Update?.Dispose();
     }
 
     public static void Update()
@@ -105,46 +96,6 @@ public class TASMod
     // Time.Duration is used for TAS inputs, so we need to keep track of this ourselves to do non-TAS inputs
     private static TimeSpan RealDuration;
 
-    private delegate void orig_Time_Advance(TimeSpan delta);
-    private static void On_Time_Advance(orig_Time_Advance orig, TimeSpan delta)
-    {
-        // Just intercept the advance for RealDuration
-        RealDuration += delta;
-        orig(delta);
-
-        // // Don't advance time while paused
-        // // However, we still need to advance it for ourselves, so that TASControls still work
-        // if (Manager.IsPaused())
-        // {
-        //     ActualDuration += delta;
-        //     return;
-        // }
-        //
-        // orig(delta);
-        // ActualDuration = Time.Duration;
-    }
-
-    private static readonly MethodInfo m_VirtualButton_set_Repeated = typeof(VirtualButton).GetProperty(nameof(VirtualButton.Repeated))?.GetSetMethod(nonPublic: true) ?? throw new InvalidOperationException();
-    private delegate void orig_VirtualButton_Update(VirtualButton self);
-    private static void On_VirtualButton_Update(orig_VirtualButton_Update orig, VirtualButton self)
-    {
-        orig(self);
-
-        // If this is one of our controls, re-run the "repeated"-check with the ActualDuration
-        if (!self.IsTASControl()) return;
-
-        if (self.Down && (RealDuration - self.PressTimestamp).TotalSeconds > self.RepeatDelay)
-        {
-            if (Time.OnInterval(
-                    (RealDuration - self.PressTimestamp).TotalSeconds - self.RepeatDelay,
-                    Time.Delta,
-                    self.RepeatInterval, 0))
-            {
-                m_VirtualButton_set_Repeated.Invoke(self, [true]);
-            }
-        }
-    }
-
     private static void IL_App_Tick(ILContext il)
     {
         var cur = new ILCursor(il);
@@ -199,7 +150,7 @@ public class TASMod
             var button = Foster.Framework.Input.virtualButtons[index];
             if (button.TryGetTarget(out var target))
             {
-                if (target.IsTASControl())
+                if (!target.IsTASHijacked())
                     target.Update();
             }
             else

@@ -166,8 +166,6 @@ public static class InputHelper
         public float ValueNoDeadzone => Value;
     }
 
-    /// A button which is still user controlled, while a TAS is running
-    public static bool IsTASControl(this VirtualButton self) => self.Bindings.Any(bind => bind is not TASButtonBinding);
     /// A button which is hijacked by the TAS inputs
-    public static bool IsTASHijacked(this VirtualButton self) => self.Bindings.Any(bind => bind is TASButtonBinding);
+    public static bool IsTASHijacked(this VirtualButton self) => self.Bindings.Any(bind => bind is TASButtonBinding or TASAxisBinding);
 }
