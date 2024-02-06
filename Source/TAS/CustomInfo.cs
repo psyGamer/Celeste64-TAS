@@ -67,47 +67,61 @@ public class CustomInfo
                 memberNames = memberNames[..^1];
             }
 
-            if (memberNames.IsNotEmpty() && (
-                    type.GetGetMethod(memberNames.First()) is { IsStatic: true } ||
-                    type.GetFieldInfo(memberNames.First()) is { IsStatic: true } ||
-                    (MethodRegex.Match(memberNames.First()) is { Success: true } methodMatch && type.GetMethodInfo(methodMatch.Groups[1].Value) is { IsStatic: true })
-                ))
+            string prefix = lastCharacter switch
             {
-                return FormatValue(GetMemberValue(type, null, memberNames), helperMethod, decimals);
-            }
+                '=' => matchText,
+                ':' => $"{matchText} ",
+                _ => ""
+            };
 
-            if (Game.Scene is World world)
+            return $"{prefix}{Format(type, memberNames, helperMethod, decimals)}";
+
+            static string Format(Type type, string[] memberNames, string? helperMethod, int decimals)
             {
-                if (type.IsSameOrSubclassOf(typeof(Actor)))
+                if (memberNames.IsNotEmpty() && (
+                        type.GetGetMethod(memberNames.First()) is { IsStatic: true } ||
+                        type.GetFieldInfo(memberNames.First()) is { IsStatic: true } ||
+                        (MethodRegex.Match(memberNames.First()) is { Success: true } methodMatch && type.GetMethodInfo(methodMatch.Groups[1].Value) is { IsStatic: true })
+                    ))
                 {
-                    if (!world.tracked.TryGetValue(type, out var actors))
-                    {
-                        world.tracked[type] = actors = new();
-                        foreach (var actor in world.Actors)
-                            if (actor.GetType() == type)
-                                actors.Add(actor);
-                        world.trackedTypes.Add(type);
-                    }
+                    object? obj = GetMemberValue(type, null, memberNames, out string? errMsg);
+                    if (errMsg != null)
+                        return errMsg;
 
-                    return string.Join("", actors.Select(actor =>
-                    {
-                        string value = FormatValue(GetMemberValue(type, actor, memberNames), helperMethod, decimals);
+                    return FormatValue(obj, helperMethod, decimals);
+                }
 
-                        if (actors.Count > 1)
+                if (Game.Scene is World world)
+                {
+                    if (type.IsSameOrSubclassOf(typeof(Actor)))
+                    {
+                        if (type == typeof(World))
                         {
-                            value = $"\n{value}";
+                            object? obj = GetMemberValue(type, world, memberNames, out string? errMsg);
+                            if (errMsg != null)
+                                return errMsg;
+
+                            return FormatValue(obj, helperMethod, decimals);
                         }
 
-                        return value;
-                    }));
-                }
-                else if (type == typeof(World))
-                {
-                    return FormatValue(GetMemberValue(type, world, memberNames), helperMethod, decimals);
-                }
-            }
+                        var actors = world.All(type);
+                        return string.Join("", actors.Select(actor =>
+                        {
+                            object? obj = GetMemberValue(type, actor, memberNames, out string? errMsg);
+                            if (errMsg != null)
+                                return errMsg;
 
-            return "";
+                            string value = FormatValue(obj, helperMethod, decimals);
+
+                            if (actors.Count > 1)
+                                return $"\n{value}";
+                            return value;
+                        }));
+                    }
+                }
+
+                return string.Empty;
+            }
         });
 
     internal static bool TryParseMemberNames(string matchText, [NotNullWhen(true)] out string? typeText, [NotNullWhen(true)] out string[]? memberNames, out string errorMessage)
@@ -187,75 +201,73 @@ public class CustomInfo
         return true;
     }
 
-    private static object? GetMemberValue(Type type, object? obj, IEnumerable<string> memberNames)
+    internal static object? GetMemberValue(Type type, object? obj, IEnumerable<string> memberNames, out string? errorMessage)
     {
         foreach (string memberName in memberNames)
         {
             if (type.GetGetMethod(memberName) is { } getMethodInfo)
             {
                 if (getMethodInfo.IsStatic)
-                {
                     obj = getMethodInfo.Invoke(null, null);
-                }
                 else if (obj != null)
-                {
                     obj = getMethodInfo.Invoke(obj, null);
-                }
             }
             else if (type.GetFieldInfo(memberName) is { } fieldInfo)
             {
                 if (fieldInfo.IsStatic)
-                {
                     obj = fieldInfo.GetValue(null);
-                }
                 else if (obj != null)
-                {
                     obj = fieldInfo.GetValue(obj);
-                }
             }
             else if (MethodRegex.Match(memberName) is { Success: true } match && type.GetMethodInfo(match.Groups[1].Value) is { } methodInfo)
             {
                 if (EnforceLegal)
                 {
-                    return $"{memberName}: Calling methods is illegal when enforce legal";
+                    errorMessage = $"{memberName}: Calling methods is illegal when enforce legal";
+                    return null;
                 }
-                else if (match.Groups[2].Value.IsNotNullOrWhiteSpace() || methodInfo.GetParameters().Length > 0)
+
+                if (match.Groups[2].Value.IsNotNullOrWhiteSpace() || methodInfo.GetParameters().Length > 0)
                 {
-                    return $"{memberName}: Only method without parameters is supported";
+                    errorMessage = $"{memberName}: Only method without parameters is supported";
+                    return null;
                 }
-                else if (methodInfo.ReturnType == typeof(void))
+
+                if (methodInfo.ReturnType == typeof(void))
                 {
-                    return $"{memberName}: Method return void is not supported";
+                    errorMessage = $"{memberName}: Method return void is not supported";
+                    return null;
                 }
-                else if (methodInfo.IsStatic)
-                {
+
+                if (methodInfo.IsStatic)
                     obj = methodInfo.Invoke(null, null);
-                }
                 else if (obj != null)
-                {
                     obj = methodInfo.Invoke(obj, null);
-                }
             }
             else
             {
                 if (obj == null)
                 {
-                    return $"{type.FullName}.{memberName} member not found";
+                    errorMessage = $"{type.FullName}.{memberName} member not found";
+                    return null;
                 }
                 else
                 {
-                    return $"{obj.GetType().FullName}.{memberName} member not found";
+                    errorMessage = $"{obj.GetType().FullName}.{memberName} member not found";
+                    return null;
                 }
             }
 
             if (obj == null)
             {
+                errorMessage = null;
                 return null;
             }
 
             type = obj.GetType();
         }
 
+        errorMessage = null;
         return obj;
     }
 

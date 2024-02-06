@@ -21,9 +21,9 @@ public class World : Scene
 	public readonly List<Actor> Actors = [];
 	private readonly List<Actor> adding = [];
 	private readonly List<Actor> destroying = [];
-	public readonly Dictionary<Type, List<Actor>> tracked = []; // TAS: publicized
+	private readonly Dictionary<Type, List<Actor>> tracked = [];
 	private readonly Dictionary<Type, Queue<Actor>> recycled = [];
-	public readonly List<Type> trackedTypes = []; // TAS: publicized
+	private readonly List<Type> trackedTypes = [];
 
 	private readonly List<ModelEntry> models = [];
 	private readonly List<Sprite> sprites = [];
@@ -202,6 +202,11 @@ public class World : Scene
 		return GetTypesOf<T>();
 	}
 
+    public List<Actor> All(Type type)
+    {
+        return GetTypesOf(type);
+    }
+
 	public void Destroy(Actor actor)
 	{
 		Debug.Assert(actor.World == this);
@@ -222,6 +227,19 @@ public class World : Scene
 		}
 		return list;
 	}
+
+    private List<Actor> GetTypesOf(Type type)
+    {
+        if (!tracked.TryGetValue(type, out var list))
+        {
+            tracked[type] = list = new();
+            foreach (var actor in Actors)
+                if (actor.GetType() == type)
+                    list.Add(actor);
+            trackedTypes.Add(type);
+        }
+        return list;
+    }
 
 	private void ResolveChanges()
 	{
