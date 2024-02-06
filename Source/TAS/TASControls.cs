@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace Celeste64.TAS;
 
 public static class TASControls
@@ -70,30 +72,4 @@ public static class TASControls
         ToggleInfoGUI.Clear();
         ToggleInfoGUI.Add(Keys.F12);
     }
-
-    public static bool IsTASControl(this VirtualButton self) =>
-        self == StartStop ||
-        self == Restart ||
-        self == FastForward ||
-        self == FastForwardComment ||
-        self == SlowForward ||
-        self == FrameAdvance ||
-        self == PauseResume ||
-        self == Hitboxes ||
-        self == TriggerHitboxes ||
-        self == SimplifiedGraphics ||
-        self == CenterCamera ||
-        self == LockCamera ||
-        self == SaveState ||
-        self == ClearState ||
-        self == InfoHud ||
-        self == FreeCamera ||
-        self == CameraUp ||
-        self == CameraDown ||
-        self == CameraLeft ||
-        self == CameraRight ||
-        self == CameraZoomIn ||
-        self == CameraZoomOut ||
-        self == Freecam ||
-        self == ToggleInfoGUI;
 }

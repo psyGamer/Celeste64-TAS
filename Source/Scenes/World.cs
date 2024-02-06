@@ -80,33 +80,37 @@ public class World : Scene
         var stopwatch = Stopwatch.StartNew();
         var map = Assets.Maps[entry.Map];
 
-        Camera.NearPlane = 20;
-        Camera.FarPlane = 800;
-        Camera.FOVMultiplier = 1;
+		// setup pause menu
+		{
+			Menu optionsMenu = new Menu();
+			optionsMenu.Title = Loc.Str("OptionsTitle");
+			optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsFullscreen"), Save.Instance.ToggleFullscreen, () => Save.Instance.Fullscreen));
+			optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsZGuide"), Save.Instance.ToggleZGuide, () => Save.Instance.ZGuide));
+			optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsTimer"), Save.Instance.ToggleTimer, () => Save.Instance.SpeedrunTimer));
+			optionsMenu.Add(new Menu.MultiSelect<Save.InvertCameraOptions>(Loc.Str("OptionsInvertCamera"), Save.Instance.SetCameraInverted, () => Save.Instance.InvertCamera));
+			optionsMenu.Add(new Menu.Spacer());
+			optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsBGM"), 0, 10, () => Save.Instance.MusicVolume, Save.Instance.SetMusicVolume));
+			optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsSFX"), 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
 
-        strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
-        strawbCounterWiggle = 0;
-
-        // setup pause menu
-        {
-            Menu optionsMenu = new Menu();
-            optionsMenu.Title = "Options";
-            optionsMenu.Add(new Menu.Toggle("Fullscreen", Save.Instance.ToggleFullscreen, () => Save.Instance.Fullscreen));
-            optionsMenu.Add(new Menu.Toggle("Z-Guide", Save.Instance.ToggleZGuide, () => Save.Instance.ZGuide));
-            optionsMenu.Add(new Menu.Toggle("Timer", Save.Instance.ToggleTimer, () => Save.Instance.SpeedrunTimer));
-            optionsMenu.Add(new Menu.Spacer());
-            optionsMenu.Add(new Menu.Slider("BGM", 0, 10, () => Save.Instance.MusicVolume, Save.Instance.SetMusicVolume));
-            optionsMenu.Add(new Menu.Slider("SFX", 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
-
-            pauseMenu.Title = "Paused";
-            pauseMenu.Add(new Menu.Option("Resume", () => SetPaused(false)));
-            pauseMenu.Add(new Menu.Option("Retry", () =>
-            {
-                SetPaused(false);
-                Audio.StopBus(Sfx.bus_dialog, false);
-                Get<Player>()?.Kill();
-            }));
-            pauseMenu.Add(new Menu.Submenu("Options", pauseMenu, optionsMenu));
+			pauseMenu.Title = Loc.Str("PauseTitle");
+            pauseMenu.Add(new Menu.Option(Loc.Str("PauseResume"), () => SetPaused(false)));
+			pauseMenu.Add(new Menu.Option(Loc.Str("PauseRetry"), () =>
+			{
+				SetPaused(false);
+				Audio.StopBus(Sfx.bus_dialog, false);
+				Get<Player>()?.Kill();
+			}));
+			pauseMenu.Add(new Menu.Submenu(Loc.Str("PauseOptions"), pauseMenu, optionsMenu));
+			pauseMenu.Add(new Menu.Option(Loc.Str("PauseSaveQuit"), () => Game.Instance.Goto(new Transition()
+			{
+				Mode = Transition.Modes.Replace,
+				Scene = () => new Overworld(true),
+				FromPause = true,
+				ToPause = true,
+				ToBlack = new SlideWipe(),
+				Saving = true
+			})));
+		}
 
             foreach (CustomSubMenu menu in CustomSubMenu.TopLevelMenus) {
                 pauseMenu.Add(new Menu.Submenu(menu.Name, pauseMenu, menu));
@@ -808,11 +812,11 @@ public class World : Scene
             batch3d.Clear();
         }
 
-        // ui
-        {
-            batch.SetSampler(new TextureSampler(TextureFilter.Linear, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
-            var bounds = new Rect(0, 0, target.Width, target.Height);
-            var font = Assets.Fonts.First().Value;
+		// ui
+		{
+			batch.SetSampler(new TextureSampler(TextureFilter.Linear, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
+			var bounds = new Rect(0, 0, target.Width, target.Height);
+			var font = Language.Current.SpriteFont;
 
             foreach (var actor in All<IHaveUI>())
                 (actor as IHaveUI)!.RenderUI(batch, bounds);
@@ -851,13 +855,13 @@ public class World : Scene
                 {
                     var wiggle = 1 + MathF.Sin(strawbCounterWiggle * MathF.Tau * 2) * strawbCounterWiggle * .3f;
 
-                    batch.PushMatrix(
-                        Matrix3x2.CreateTranslation(0, -UI.IconSize / 2) *
-                        Matrix3x2.CreateScale(wiggle) *
-                        Matrix3x2.CreateTranslation(at + new Vec2(-60 * (1 - Ease.CubeOut(strawbCounterEase)), UI.IconSize / 2)));
-                    UI.Strawberries(batch, Save.CurrentRecord.Strawberries.Count, Vec2.Zero);
-                    batch.PopMatrix();
-                }
+					batch.PushMatrix(
+						Matrix3x2.CreateTranslation(0, -UI.IconSize / 2) *
+						Matrix3x2.CreateScale(wiggle) *
+						Matrix3x2.CreateTranslation(at + new Vec2(-60 * (1 - Ease.Cube.Out(strawbCounterEase)), UI.IconSize / 2)));
+					UI.Strawberries(batch, Save.CurrentRecord.Strawberries.Count, Vec2.Zero);
+					batch.PopMatrix();
+				}
 
                 // show version number when paused / in ending area
                 if (IsInEndingArea || Paused)

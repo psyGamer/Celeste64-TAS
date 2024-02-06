@@ -1,20 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
+        <Platforms>x64</Platforms>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Version>1.0.1</Version>
         <PublishSingleFile>false</PublishSingleFile>
         <PublishTrimmed>false</PublishTrimmed>
-        <Platforms>x64</Platforms>
         <SelfContained>true</SelfContained>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FosterFramework" Version="0.1.15-alpha" />
+        <PackageReference Include="FosterFramework" Version="0.1.17-alpha" Publicize="true" />
         <PackageReference Include="SharpGLTF.Runtime" Version="1.0.0-alpha0031" />
         <PackageReference Include="Sledge.Formats.Map" Version="1.1.5" />
 
@@ -22,6 +22,7 @@
         <PackageReference Include="ImGui.NET" Version="1.90.1.1" />
         <PackageReference Include="NativeFileDialogSharp" Version="0.5.0" />
         <PackageReference Include="EmbeddedBuildProperty" Version="1.0.0" />
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup Condition="($(RuntimeIdentifier) == '' and $([MSBuild]::IsOSPlatform('Linux'))) or $(RuntimeIdentifier) == 'linux-x64'">

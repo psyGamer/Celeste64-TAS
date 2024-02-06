@@ -9,32 +9,27 @@ public class TASMod
 {
     private static ILHook? il_App_Tick;
     private static Hook? on_App_Tick_Update;
-    private static Hook? on_Time_Advance;
-    private static Hook? on_VirtualButton_Update;
+    private static Hook? on_Input_Step;
 
     public static void Initialize()
     {
         CommandAttribute.CollectMethods();
-        CustomInfo.CollectAllTypeInfo();
-        CustomInfo.InitializeHelperMethods();
 
         il_App_Tick = new ILHook(typeof(App).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), IL_App_Tick);
         on_App_Tick_Update = new Hook(typeof(App).GetMethod("<Tick>g__Update|69_0", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_App_Tick_Update);
-        on_Time_Advance = new Hook(typeof(Time).GetMethod(nameof(Time.Advance), BindingFlags.Public | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Time_Advance);
-        on_VirtualButton_Update = new Hook(typeof(VirtualButton).GetMethod("Update", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException(), On_VirtualButton_Update);
+        on_Input_Step = new Hook(typeof(Foster.Framework.Input).GetMethod("Step", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Input_Step);
     }
 
     public static void Deinitialize()
     {
         il_App_Tick?.Dispose();
         on_App_Tick_Update?.Dispose();
-        on_Time_Advance?.Dispose();
-        on_VirtualButton_Update?.Dispose();
+        on_Input_Step?.Dispose();
     }
 
     public static void Update()
     {
-        if (TASControls.Freecam.Pressed)
+        if (TASControls.Freecam.ConsumePress())
         {
             Save.Instance.Freecam = Save.Instance.Freecam switch
             {
@@ -46,7 +41,7 @@ public class TASMod
             Save.Instance.SyncSettings();
         }
 
-        if (TASControls.SimplifiedGraphics.Pressed)
+        if (TASControls.SimplifiedGraphics.ConsumePress())
         {
             Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
             Save.Instance.SyncSettings();
@@ -73,13 +68,13 @@ public class TASMod
             }
         }
 
-        if (TASControls.Hitboxes.Pressed)
+        if (TASControls.Hitboxes.ConsumePress())
         {
             Save.Instance.Hitboxes = !Save.Instance.Hitboxes;
             Save.Instance.SyncSettings();
         }
 
-        if (TASControls.InvisiblePlayer.Pressed)
+        if (TASControls.InvisiblePlayer.ConsumePress())
         {
             Save.Instance.InvisiblePlayer = !Save.Instance.InvisiblePlayer;
             Save.Instance.SyncSettings();
@@ -87,7 +82,7 @@ public class TASMod
 
         Manager.Update();
 
-        if (TASControls.StartStop.Pressed)
+        if (TASControls.StartStop.ConsumePress())
         {
             if (Manager.Running)
                 Manager.DisableRun();
@@ -98,43 +93,8 @@ public class TASMod
         InfoHUD.Update();
     }
 
-    private static TimeSpan ActualDuration;
-
-    private delegate void orig_Time_Advance(TimeSpan delta);
-    private static void On_Time_Advance(orig_Time_Advance orig, TimeSpan delta)
-    {
-        // Don't advance time while paused
-        // However, we still need to advance it for ourselves, so that TASControls still work
-        if (Manager.IsPaused())
-        {
-            ActualDuration += delta;
-            return;
-        }
-
-        orig(delta);
-        ActualDuration = Time.Duration;
-    }
-
-    private static readonly MethodInfo m_VirtualButton_set_Repeated = typeof(VirtualButton).GetProperty(nameof(VirtualButton.Repeated))?.GetSetMethod(nonPublic: true) ?? throw new InvalidOperationException();
-    private delegate void orig_VirtualButton_Update(VirtualButton self);
-    private static void On_VirtualButton_Update(orig_VirtualButton_Update orig, VirtualButton self)
-    {
-        orig(self);
-
-        // If this is one of our controls, re-run the "repeated"-check with the ActualDuration
-        if (!self.IsTASControl()) return;
-
-        if (self.Down && (ActualDuration - self.PressTimestamp).TotalSeconds > self.RepeatDelay)
-        {
-            if (Time.OnInterval(
-                    (ActualDuration - self.PressTimestamp).TotalSeconds - self.RepeatDelay,
-                    Time.Delta,
-                    self.RepeatInterval, 0))
-            {
-                m_VirtualButton_set_Repeated.Invoke(self, [true]);
-            }
-        }
-    }
+    // Time.Duration is used for TAS inputs, so we need to keep track of this ourselves to do non-TAS inputs
+    private static TimeSpan RealDuration;
 
     private static void IL_App_Tick(ILContext il)
     {
@@ -145,7 +105,7 @@ public class TASMod
             instr => instr.MatchLdsfld("Foster.Framework.App", "accumulator"),
             instr => instr.MatchLdsfld("Foster.Framework.Time", "FixedStepMaxElapsedTime"),
             instr => instr.MatchCall<TimeSpan>("op_GreaterThan"));
-        // And append a '&& !Manager.Running' to the conditionn
+        // And append a '&& !Manager.Running' to the condition
         cur.EmitCall(typeof(Manager).GetProperty(nameof(Manager.Running), BindingFlags.Public | BindingFlags.Static)!.GetGetMethod()!);
         cur.EmitNot();
         cur.EmitAnd();
@@ -154,20 +114,68 @@ public class TASMod
     private delegate void orig_App_Tick_Update(TimeSpan delta);
     private static void On_App_Tick_Update(orig_App_Tick_Update orig, TimeSpan delta)
     {
-        if (TASControls.ToggleInfoGUI.Pressed)
+        if (TASControls.ToggleInfoGUI.ConsumePress())
         {
             Game.Instance.imGuiEnabled = !Game.Instance.imGuiEnabled;
         }
-
         if (Game.Instance.imGuiEnabled)
         {
             Game.Instance.imGuiRenderer.Update();
         }
 
+        // Always update real duration
+        RealDuration += delta;
+
+        // Don't do anything if TAS isn't running
+        if (!Manager.Running)
+        {
+            orig(delta);
+            Update();
+            return;
+        }
+
+        // We split-up Input.Step() into 2 parts:
+        // - Every real frame: Non-TAS inputs
+        // - Every TAS frame: TAS inputs
+
+        // Non-TAS inputs
+        Foster.Framework.Input.LastState.Copy(Foster.Framework.Input.State);
+        Foster.Framework.Input.State.Copy(Foster.Framework.Input.nextState);
+        Foster.Framework.Input.nextState.Step();
+        // Fake Time.Duration for binding update
+        var tasDuration = Time.Duration;
+        Time.Duration = RealDuration;
+        for (int index = Foster.Framework.Input.virtualButtons.Count - 1; index >= 0; --index)
+        {
+            var button = Foster.Framework.Input.virtualButtons[index];
+            if (button.TryGetTarget(out var target))
+            {
+                if (!target.IsTASHijacked())
+                    target.Update();
+            }
+            else
+            {
+                Foster.Framework.Input.virtualButtons.RemoveAt(index);
+            }
+        }
+        // Reset back
+        Time.Duration = tasDuration;
+
         int loops = Manager.FrameLoops; // Copy to local variable, so it doesn't update while iterating
         for (int i = 0; i < loops; i++)
         {
+            TASMod.Update();
             orig(delta);
         }
+    }
+
+    private delegate void orig_Input_Step();
+    private static void On_Input_Step(orig_Input_Step orig)
+    {
+        // Default behaviour outside a TAS
+        if (!Manager.Running)
+            orig();
+
+        // Updating hijacked input is done inside InputHelper.FeedInputs()
     }
 }

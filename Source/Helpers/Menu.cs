@@ -13,20 +13,22 @@ public class Menu {
         public virtual void Slide(int dir) { }
     }
 
-    public class Submenu(string label, Menu? rootMenu, Menu? submenu = null) : Item {
-        private readonly string label = label;
-        public override string Label => label;
-        public override bool Pressed() {
-            if (submenu != null) {
-                Audio.Play(Sfx.ui_select);
-                submenu.Index = 0;
-                rootMenu?.PushSubMenu(submenu);
-                return true;
-            }
-
-            return false;
-        }
-    }
+	public class Submenu(string label, Menu? rootMenu, Menu? submenu = null) : Item
+	{
+		private readonly string label = label;
+		public override string Label => label;
+		public override bool Pressed()
+		{
+			if (submenu != null)
+			{
+				Audio.Play(Sfx.ui_select);
+				submenu.Index = 0;
+				rootMenu?.PushSubMenu(submenu);
+				return true;
+			}
+			return false;
+		}
+	}
 
     public class Spacer : Item {
         public override bool Selectable => false;
@@ -81,13 +83,48 @@ public class Menu {
         }
     }
 
-    public int Index;
-    public string Title = string.Empty;
-    public bool Focused = true;
+	public class MultiSelect(string label, List<string> options, Func<int> get, Action<int> set) : Item
+	{
+		private readonly List<string> options = options;
+		private readonly Action<int> set = set;
+		public override string Label => $"{label} : {options[get()]}";
 
-    private readonly SpriteFont font;
-    private readonly List<Item> items = [];
-    private readonly Stack<Menu> submenus = [];
+		public override void Slide(int dir)
+		{
+			Audio.Play(Sfx.ui_select);
+
+			int index = get();
+			if (index < options.Count() - 1 && dir == 1)
+				index++;
+			if (index > 0 && dir == -1)
+				index--;
+			set(index);
+		}
+	}
+
+	public class MultiSelect<T> : MultiSelect where T : struct, Enum
+	{
+		private static List<string> GetEnumOptions()
+		{
+			var list = new List<string>();
+			foreach (var it in Enum.GetNames<T>())
+				list.Add(it);
+			return list;
+		}
+
+		public MultiSelect(string label, Action<T> set, Func<T> get)
+			: base(label, GetEnumOptions(), () => (int)(object)get(), (i) => set((T)(object)i))
+		{
+
+		}
+	}
+
+	public int Index;
+	public string Title = string.Empty;
+	public bool Focused = true;
+
+	private readonly List<Item> items = [];
+	private readonly Stack<Menu> submenus = [];
 
     public string UpSound = Sfx.ui_move;
     public string DownSound = Sfx.ui_move;
@@ -95,9 +132,12 @@ public class Menu {
     public bool IsInMainMenu => submenus.Count <= 0;
     private Menu CurrentMenu => submenus.Count > 0 ? submenus.Peek() : this;
 
-    public Vec2 Size {
-        get {
-            Vec2 size = Vec2.Zero;
+	public Vec2 Size
+	{
+		get
+		{
+			var size = Vec2.Zero;
+			var font = Language.Current.SpriteFont;
 
             if (!string.IsNullOrEmpty(Title)) {
                 size.X = font.WidthOf(Title) * TitleScale;
@@ -123,14 +163,11 @@ public class Menu {
         }
     }
 
-    public Menu() {
-        font = Assets.Fonts.First().Value;
-    }
-
-    public Menu Add(Item item) {
-        items.Add(item);
-        return this;
-    }
+	public Menu Add(Item item)
+	{
+		items.Add(item);
+		return this;
+	}
 
     protected void PushSubMenu(Menu menu) {
         submenus.Push(menu);
@@ -179,10 +216,12 @@ public class Menu {
         }
     }
 
-    private void RenderItems(Batcher batch) {
-        var size = Size;
-        var position = Vec2.Zero;
-        batch.PushMatrix(-size / 2);
+	private void RenderItems(Batcher batch)
+	{
+		var font = Language.Current.SpriteFont;
+		var size = Size;
+		var position = Vec2.Zero;
+		batch.PushMatrix(-size / 2);
 
         if (!string.IsNullOrEmpty(Title)) {
             var at = position + new Vec2(size.X / 2, 0);

@@ -135,23 +135,10 @@ public class Game : Module
             Music.Stop();
     }
 
-    private static MethodInfo m_Input_Step = typeof(Input).GetMethod("Step", BindingFlags.Static | BindingFlags.NonPublic) ?? throw new Exception("Input missing Step");
-
-    public override void Update()
-    {
-        TASMod.Update();
-        if (Manager.IsPaused())
-        {
-            if (!scenes.TryPeek(out var camscene) || camscene is not World world) return;
-            var player = world.Get<Player>();
-            if (player == null) return;
-            Manager.prevMousePosition = Manager.nextMousePosition;
-            Manager.nextMousePosition = Input.Mouse.Position;
-            //TODO: Refactor Camera Logic out of Player
-            player.Update();
-            player.LateUpdate();
-            return;
-        }
+	public override void Update()
+	{
+        // NOTE: Everything else is handled inside the TASMod hooks
+        if (Manager.IsPaused()) return;
 
         // update top scene
         if (scenes.TryPeek(out var scene))

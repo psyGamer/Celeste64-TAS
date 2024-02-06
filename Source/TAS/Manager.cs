@@ -83,18 +83,10 @@ public static class Manager
             }
         }
 
-        if (TASControls.PauseResume.Pressed)
-        {
-            if (CurrState == State.Running)
-                NextState = State.Paused;
-            else if (CurrState == State.Paused)
-                NextState = State.Running;
-        }
-
         switch (CurrState)
         {
         case State.Running:
-            if (TASControls.PauseResume.Pressed)
+            if (TASControls.PauseResume.ConsumePress())
                 NextState = State.Paused;
             else
                 NextState = TASControls.FastForward.Down ? State.FastForward : State.Running;
@@ -106,15 +98,15 @@ public static class Manager
             NextState = State.Paused;
             break;
         case State.Paused:
-            if (TASControls.PauseResume.Pressed)
-            {
+            if (TASControls.PauseResume.ConsumePress())
                 NextState = State.Running;
-            }
-            else if (TASControls.SlowForward.Down || TASControls.FrameAdvance.Pressed | TASControls.FrameAdvance.Repeated)
-            {
+            else if (TASControls.SlowForward.Down || TASControls.FrameAdvance.ConsumePress() || TASControls.FrameAdvance.Repeated)
                 NextState = State.FrameAdvance;
             }
 
+            break;
+        case State.Disabled:
+        default:
             break;
         }
     }

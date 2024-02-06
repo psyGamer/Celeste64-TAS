@@ -152,8 +152,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
     private CameraOverride? cameraOverride = null;
     private Vec3 cameraOriginPos;
 
-    public float tCoyote; // TAS: publicized
-    public float coyoteZ;
+	public float tCoyote; // TAS: publicized
+	public float coyoteZ; // TAS: publicized
 
     private bool drawModel = true;
     private bool drawHair = true;
@@ -337,33 +337,35 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                              Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free);
 
 
-        // only update camera if not dead and not in freecam
-        if ( /*stateMachine.State != States.Respawn && stateMachine.State != States.Dead &&*/
-            stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
-        {
-            // Rotate Camera
-            {
-                var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
-                rot -= Controls.Camera.Value.X * Time.Delta * 4;
+		// only update camera if not dead and not in freecam
+		if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead &&
+			stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
+		{
+			// Rotate Camera
+			{
+				var invertX = Save.Instance.InvertCamera == Save.InvertCameraOptions.X || Save.Instance.InvertCamera == Save.InvertCameraOptions.Both;
+				var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
+				rot -= Controls.Camera.Value.X * Time.Delta * 4 * (invertX ? -1 : 1);
 
                 var angle = Calc.AngleToVector(rot);
                 cameraTargetForward = new(angle, 0);
             }
 
-            // Move Camera in / out
-            if (Controls.Camera.Value.Y != 0)
-            {
-                cameraTargetDistance += Controls.Camera.Value.Y * Time.Delta;
-                cameraTargetDistance = Calc.Clamp(cameraTargetDistance, 0, 1);
-            }
-            else
-            {
-                const float interval = 1f / 3;
-                const float threshold = .1f;
-                if (cameraTargetDistance % interval < threshold || cameraTargetDistance % interval > interval - threshold)
-                    Calc.Approach(ref cameraTargetDistance, Calc.Snap(cameraTargetDistance, interval), Time.Delta / 2);
-            }
-        }
+			// Move Camera in / out
+			if (Controls.Camera.Value.Y != 0)
+			{
+				var invertY = Save.Instance.InvertCamera == Save.InvertCameraOptions.Y || Save.Instance.InvertCamera == Save.InvertCameraOptions.Both;
+				cameraTargetDistance += Controls.Camera.Value.Y * Time.Delta * (invertY ? -1 : 1);
+				cameraTargetDistance = Calc.Clamp(cameraTargetDistance, 0, 1);
+			}
+			else
+			{
+				const float interval = 1f / 3;
+				const float threshold = .1f;
+				if (cameraTargetDistance % interval < threshold || cameraTargetDistance % interval > interval - threshold)
+					Calc.Approach(ref cameraTargetDistance, Calc.Snap(cameraTargetDistance, interval), Time.Delta / 2);
+			}
+		}
 
         // Dont run any player logic while in freecam and TAS disabled
         if (!Manager.Running && Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
@@ -1582,606 +1584,606 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         // only change the input direction based on the camera when we stop moving
         // so if we keep holding a direction, we keep moving the same way (even if it's flipped in the perspective)
         // TAS: Dont do any flipping while a TAS is running with independent camera mode
-        if ((!Manager.Running || CameraModeCommand.Mode == CameraModeCommand.CameraMode.Dependent) && MathF.Abs(Controls.Move.Value.X) < .5f)
-            climbInputSign = (Vec2.Dot(targetFacing, cameraTargetForward.XY().Normalized()) < -.4f) ? -1 : 1;
-
-        Vec2 inputTranslated = Controls.Move.Value;
-        inputTranslated.X *= climbInputSign;
-
-        // move around
-        if (climbCornerEase <= 0)
-        {
-            var side = wallRight * inputTranslated.X;
-            var up = -wallUp * inputTranslated.Y;
-            var move = side + up;
-
-            // cancel down vector if we're on the ground
-            if (move.Z < 0 && GroundCheck(out _, out _, out _))
-                move.Z = 0;
-
-            // don't climb over ledges into spikes
-            // (you can still climb up into spikes if they're on the same wall as you)
-            if (move.Z > 0 && World.Overlaps<SpikeBlock>(Position + Vec3.UnitZ * ClimbCheckDist + forward * (ClimbCheckDist + 1)))
-                move.Z = 0;
-
-            // don't move left/right around into a spikes
-            // (you can still climb up into spikes if they're on the same wall as you)
-            if (World.Overlaps<SpikeBlock>(SolidWaistTestPos + side + forward * (ClimbCheckDist + 1)))
-                move -= side;
-
-            if (MathF.Abs(move.X) < 0.1f) move.X = 0;
-            if (MathF.Abs(move.Y) < 0.1f) move.Y = 0;
-            if (MathF.Abs(move.Z) < 0.1f) move.Z = 0;
-
-            if (move != Vec3.Zero)
-                SweepTestMove(move * ClimbSpeed * Time.Delta, false);
-
-            if (MathF.Abs(inputTranslated.X) < 0.25f && inputTranslated.Y >= 0)
-            {
-                if (inputTranslated.Y > 0 && !onGround)
-                {
-                    if (Time.OnInterval(0.05f))
-                    {
-                        var at = Position + wallUp * 5 + new Vec3(Facing, 0) * 2;
-                        var vel = tPlatformVelocityStorage > 0 ? platformVelocity : Vec3.Zero;
-                        World.Request<Dust>().Init(at, vel);
-                    }
-
-                    wallSlideSoundEnabled = true;
-                }
-
-                Model.Play("Climb.Idle");
-            }
-            else
-            {
-                Model.Play("Climb.Up");
-
-                if (Time.OnInterval(0.3f))
-                    Audio.Play(Sfx.sfx_handhold, Position);
-            }
-        }
-        // perform corner lerp
-        else
-        {
-            var ease = 1.0f - climbCornerEase;
-
-            velocity = Vec3.Zero;
-            Position = Vec3.Lerp(climbCornerFrom, climbCornerTo, ease);
-            targetFacing = Calc.AngleToVector(Calc.AngleLerp(climbCornerFacingFrom.Angle(), climbCornerFacingTo.Angle(), ease));
-
-            if (climbCornerCameraFrom.HasValue && climbCornerCameraTo.HasValue)
-            {
-                var angle = Calc.AngleLerp(climbCornerCameraFrom.Value.Angle(), climbCornerCameraTo.Value.Angle(), ease * 0.50f);
-                cameraTargetForward = new Vec3(Calc.AngleToVector(angle), cameraTargetForward.Z);
-            }
-
-            Calc.Approach(ref climbCornerEase, 0, Time.Delta / 0.20f);
-            return;
-        }
-
-        // reset corner lerp data in case we use it
-        climbCornerFrom = Position;
-        climbCornerFacingFrom = targetFacing;
-        climbCornerCameraFrom = null;
-        climbCornerCameraTo = null;
-
-        // move around inner corners
-        if (inputTranslated.X != 0 && World.SolidRayCast(SolidWaistTestPos, wallRight * inputTranslated.X, ClimbCheckDist, out RayHit hit))
-        {
-            Position = hit.Point + (Position - SolidWaistTestPos) + hit.Normal * WallPushoutDist;
-            targetFacing = -hit.Normal.XY();
-            climbingWallNormal = hit.Normal;
-            climbingWallActor = hit.Actor;
-        }
-
-        // snap to walls that slope away from us
-        else if (World.SolidRayCast(SolidWaistTestPos, -climbingWallNormal, ClimbCheckDist + 2, out hit) && ClimbNormalCheck(hit.Normal))
-        {
-            Position = hit.Point + (Position - SolidWaistTestPos) + hit.Normal * WallPushoutDist;
-            targetFacing = -hit.Normal.XY();
-            climbingWallNormal = hit.Normal;
-            climbingWallActor = hit.Actor;
-        }
-
-        // rotate around corners due to input
-        else if (
-            inputTranslated.X != 0 &&
-            World.SolidRayCast(SolidWaistTestPos + forward * (ClimbCheckDist + 1) + wallRight * inputTranslated.X, wallRight * -inputTranslated.X, ClimbCheckDist * 2, out hit) &&
-            ClimbNormalCheck(hit.Normal))
-        {
-            Position = hit.Point + (Position - SolidWaistTestPos) + hit.Normal * WallPushoutDist;
-            targetFacing = -hit.Normal.XY();
-            climbingWallNormal = hit.Normal;
-            climbingWallActor = hit.Actor;
-
-            //if (Vec2.Dot(targetFacing, CameraForward.XY().Normalized()) < -.3f)
-            {
-                climbCornerCameraFrom = cameraTargetForward.XY();
-                climbCornerCameraTo = targetFacing;
-            }
-
-            Model.Play("Climb.Idle");
-            forceCorner = true;
-        }
-        // hops over tops
-        else if (inputTranslated.Y < 0 && !ClimbCheckAt(Vec3.UnitZ, out _))
-        {
-            Audio.Play(Sfx.sfx_climb_ledge, Position);
-            stateMachine.State = States.Normal;
-            velocity = new(targetFacing * ClimbHopForwardSpeed, ClimbHopUpSpeed);
-            tNoMove = ClimbHopNoMoveTime;
-            tClimbCooldown = 0.3f;
-            autoJump = false;
-            AddPlatformVelocity(false);
-            return;
-        }
-        // fall off
-        else if (!TryClimb())
-        {
-            stateMachine.State = States.Normal;
-            return;
-        }
-
-        // update wall slide sfx
-        if (wallSlideSoundEnabled)
-            sfxWallSlide?.Resume();
-        else
-            sfxWallSlide?.Stop();
-
-        // rotate around corners nicely
-        if (forceCorner || (Position - climbCornerFrom).Length() > 2)
-        {
-            climbCornerEase = 1.0f;
-            climbCornerTo = Position;
-            climbCornerFacingTo = targetFacing;
-            Position = climbCornerFrom;
-            targetFacing = climbCornerFacingFrom;
-        }
-    }
-
-    #endregion
-
-    #region StrawbGet State
-
-    private Strawberry? lastStrawb;
-    private Vec2 strawbGetForward;
-
-    private void StStrawbGetEnter()
-    {
-        Model.Play("StrawberryGrab");
-        Model.Flags = ModelFlags.StrawberryGetEffect;
-        Hair.Flags = ModelFlags.StrawberryGetEffect;
-        if (lastStrawb is { } strawb)
-            strawb.Model.Flags = ModelFlags.StrawberryGetEffect;
-        velocity = Vec3.Zero;
-        strawbGetForward = (World.Camera.Position - Position).XY().Normalized();
-        cameraOverride = new(World.Camera.Position, World.Camera.LookAt);
-    }
-
-    private void StStrawbGetExit()
-    {
-        cameraOverride = null;
-
-        Model.Flags = ModelFlags.Default | ModelFlags.Silhouette;
-        Hair.Flags = ModelFlags.Default | ModelFlags.Silhouette;
-
-        if (lastStrawb != null && lastStrawb.BubbleTo.HasValue)
-        {
-            BubbleTo(lastStrawb.BubbleTo.Value);
-        }
-
-        if (lastStrawb != null)
-            World.Destroy(lastStrawb);
-    }
-
-    private void StStrawbGetUpdate()
-    {
-        Facing = targetFacing = Calc.AngleToVector(strawbGetForward.Angle() - MathF.PI / 7);
-        cameraOverride = new CameraOverride(Position + new Vec3(strawbGetForward * 50, 40), Position + Vec3.UnitZ * 6);
-    }
-
-    private CoEnumerator StStrawbGetRoutine()
-    {
-        yield return 2.0f;
-
-        if (lastStrawb != null)
-            Save.CurrentRecord.Strawberries.Add(lastStrawb.ID);
-
-        yield return 1.2f;
-
-        if (World.Entry.Submap)
-        {
-            Save.CurrentRecord.CompletedSubMaps.Add(World.Entry.Map);
-            Game.Instance.Goto(new Transition()
-            {
-                Mode = Transition.Modes.Pop,
-                ToPause = true,
-                ToBlack = new SpotlightWipe(),
-                StopMusic = true,
-                Saving = true
-            });
-        }
-        else
-        {
-            stateMachine.State = States.Normal;
-        }
-    }
-
-    public void StrawbGet(Strawberry strawb)
-    {
-        if (stateMachine.State != States.StrawbGet)
-        {
-            lastStrawb = strawb;
-            stateMachine.State = States.StrawbGet;
-            Position = strawb.Position + Vec3.UnitZ * -3;
-            lastStrawb.Position = Position + Vec3.UnitZ * 12;
-        }
-    }
-
-    #endregion
-
-    #region FeatherStart State
-
-    private float tFeatherStart;
-
-    private void StFeatherStartEnter()
-    {
-        tFeatherStart = FeatherStartTime;
-    }
-
-    private void StFeatherStartExit()
-    {
-    }
-
-    private void StFeatherStartUpdate()
-    {
-        var input = RelativeMoveInput;
-        if (input != Vec2.Zero)
-            targetFacing = input.Normalized();
-
-        SetHairColor(CFeather);
-        HandleFeatherZ();
-
-        tFeatherStart -= Time.Delta;
-        if (tFeatherStart <= 0)
-        {
-            stateMachine.State = States.Feather;
-            return;
-        }
-
-        var velXY = velocity.XY();
-        Calc.Approach(ref velXY, Vec2.Zero, 200 * Time.Delta);
-        velocity = velocity.WithXY(velXY);
-
-        // dashing
-        if (dashes > 0 && tDashCooldown <= 0 && Controls.Dash.ConsumePress())
-        {
-            stateMachine.State = States.Dashing;
-            dashes--;
-            return;
-        }
-    }
-
-    public void FeatherGet(Feather feather)
-    {
-        Audio.Play(Sfx.sfx_dashcrystal, Position);
-        World.HitStun = 0.05f;
-
-        if (stateMachine.State == States.Feather)
-        {
-            tFeather = FeatherDuration;
-            featherZ = feather.Position.Z - 2;
-            Audio.Play(Sfx.sfx_feather_renew, Position);
-        }
-        else
-        {
-            stateMachine.State = States.FeatherStart;
-            featherZ = feather.Position.Z - 2;
-            dashes = Math.Max(dashes, 1);
-            Audio.Play(Sfx.sfx_feather_get, Position);
-        }
-    }
-
-    private void HandleFeatherZ()
-        => Calc.Approach(ref velocity.Z, (featherZ - Position.Z) * 40, 600 * Time.Delta);
-
-    #endregion
-
-    #region Feather State
-
-    private float featherZ;
-    private float tFeather;
-    private float tFeatherWallBumpCooldown;
-    private bool featherPlayedEndWarn = false;
-
-    private void StFeatherEnter()
-    {
-        velocity = velocity.WithXY(targetFacing * FeatherStartSpeed);
-        tFeather = FeatherDuration;
-        Hair.Roundness = 1;
-        drawModel = false;
-        featherPlayedEndWarn = false;
-        tFeatherWallBumpCooldown = 0;
-        sfxFeather?.Resume();
-    }
-
-    private void StFeatherExit()
-    {
-        Hair.Roundness = 0;
-        drawModel = true;
-        sfxFeather?.Stop();
-    }
-
-    private void StFeatherUpdate()
-    {
-        const float EndWarningTime = 0.8f;
-
-        if (tFeather > EndWarningTime || Time.BetweenInterval(.1f))
-            SetHairColor(CFeather);
-        else if (dashes == 2)
-            SetHairColor(CTwoDashes);
-        else
-            SetHairColor(CNormal);
-
-        HandleFeatherZ();
-
-        var velXY = velocity.XY();
-
-        var input = RelativeMoveInput;
-        if (input != Vec2.Zero)
-            input = input.Normalized();
-        else
-            input = targetFacing;
-
-        velXY = Calc.RotateToward(velXY, input * FeatherFlySpeed, FeatherTurnSpeed * Time.Delta, FeatherAccel * Time.Delta);
-        targetFacing = velXY.Normalized();
-        velocity = velocity.WithXY(velXY);
-
-        tFeather -= Time.Delta;
-        tFeatherWallBumpCooldown -= Time.Delta;
-
-        if (tFeather <= EndWarningTime && !featherPlayedEndWarn)
-        {
-            featherPlayedEndWarn = true;
-            Audio.Play(Sfx.sfx_feather_state_end_warning, Position);
-        }
-
-        if (tFeather <= 0)
-        {
-            stateMachine.State = States.Normal;
-
-            velocity.X *= FeatherExitXYMult;
-            velocity.Y *= FeatherExitXYMult;
-            holdJumpSpeed = velocity.Z = FeatherExitZSpeed;
-            tHoldJump = .1f;
-            autoJump = true;
-            Audio.Play(Sfx.sfx_feather_state_end, Position);
-
-            return;
-        }
-
-        // dashing
-        if (dashes > 0 && tDashCooldown <= 0 && Controls.Dash.ConsumePress())
-        {
-            stateMachine.State = States.Dashing;
-            dashes--;
-            return;
-        }
-
-        // start climbing
-        if (Controls.Climb.Down && TryClimb())
-        {
-            stateMachine.State = States.Climbing;
-            return;
-        }
-    }
-
-    #endregion
-
-    #region Respawn State
-
-    private void StRespawnEnter()
-    {
-        drawModel = drawHair = false;
-        drawOrbs = true;
-        drawOrbsEase = 1;
-        PointShadowAlpha = 0;
-        Audio.Play(Sfx.sfx_revive, Position);
-    }
-
-    private void StRespawnUpdate()
-    {
-        drawOrbsEase -= Time.Delta * 2;
-        if (drawOrbsEase <= 0)
-            stateMachine.State = States.Normal;
-    }
-
-    private void StRespawnExit()
-    {
-        PointShadowAlpha = 1;
-        drawModel = drawHair = true;
-        drawOrbs = false;
-    }
-
-    #endregion
-
-    #region B-Side Strawb Reveal
-
-    // TODO: should maybe be a cutscene object? idk
-
-    private Actor? enterLookAt;
-
-    private void StStrawbRevealEnter()
-    {
-    }
-
-    private CoEnumerator StStrawbRevealRoutine()
-    {
-        yield return Co.SingleFrame;
-
-        enterLookAt = World.Get<Strawberry>();
-
-        if (enterLookAt != null)
-        {
-            targetFacing = (enterLookAt.Position - Position).XY().Normalized();
-
-            var lookAt = enterLookAt.Position + new Vec3(0, 0, 3);
-            var normal = (Position - lookAt).Normalized();
-            var fromPos = lookAt + normal * 40 + Vec3.UnitZ * 20;
-            var toPos = Position + new Vec3(0, 0, 16) + normal * 40;
-            var control = (fromPos + toPos) * .5f + Vec3.UnitZ * 40;
-
-            cameraOverride = new(fromPos, lookAt);
-            World.Camera.Position = cameraOverride.Value.Position;
-            World.Camera.LookAt = cameraOverride.Value.LookAt;
-
-            yield return 1f;
-
-            for (float p = 0; p < 1.0f; p += Time.Delta / 3)
-            {
-                cameraOverride = new(Utils.Bezier(fromPos, control, toPos, Ease.SineIn(p)), lookAt);
-                yield return Co.SingleFrame;
-            }
-
-            for (float p = 0; p < 1.0f; p += Time.Delta / 1f)
-            {
-                GetCameraTarget(out var lookAtTo, out var posTo, out _);
-
-                var t = Ease.SineOut(p);
-                cameraOverride = new(Vec3.Lerp(toPos, posTo, t), Vec3.Lerp(lookAt, lookAtTo, t));
-                yield return Co.SingleFrame;
-            }
-
-            yield return .02f;
-        }
-
-        stateMachine.State = States.Normal;
-    }
-
-    private void StStrawbRevealExit()
-    {
-        cameraOverride = null;
-    }
-
-    #endregion
-
-    #region Dead State
-
-    private void StDeadEnter()
-    {
-        drawModel = drawHair = false;
-        drawOrbs = true;
-        drawOrbsEase = 0;
-        PointShadowAlpha = 0;
-        Audio.Play(Sfx.sfx_death, Position);
-    }
-
-    private void StDeadUpdate()
-    {
-        if (drawOrbsEase < 1.0f)
-            drawOrbsEase += Time.Delta * 2.0f;
-
-        if (!Game.Instance.IsMidTransition && drawOrbsEase > 0.30f)
-        {
-            var entry = World.Entry with { Reason = World.EntryReasons.Respawned };
-            Game.Instance.Goto(new Transition() 
-            { 
-                Mode = Transition.Modes.Replace,
-                Scene = () => new World(entry), 
-                ToBlack = new AngledWipe()
-                });
-        }
-    }
-
-    #endregion
-
-    #region Cutscene State
-
-    private void StCutsceneEnter()
-    {
-        Model.Play("Idle");
-    }
-
-    private void StCutsceneUpdate()
-    {
-        if (World.All<Cutscene>().Count == 0)
-            stateMachine.State = States.Normal;
-    }
-
-    #endregion
-
-    #region Bubble State
-
-    private Vec3 bubbleTo;
-
-    public void BubbleTo(Vec3 target)
-    {
-        bubbleTo = target;
-        Model.Play("StrawberryGrab");
-        stateMachine.State = States.Bubble;
-        PointShadowAlpha = 0;
-        Audio.Play(Sfx.sfx_bubble_in, Position);
-    }
-
-    private CoEnumerator StBubbleRoutine()
-    {
-        Vec3 bubbleFrom = Position;
-        Vec3 control = (bubbleTo + bubbleFrom) * .5f + Vec3.UnitZ * 40;
-        float duration = (bubbleTo - bubbleFrom).Length() / 220;
-        float ease = 0.0f;
-
-        yield return .2f;
-
-        sfxBubble?.Resume();
-        while (ease < 1.0f)
-        {
-            Calc.Approach(ref ease, 1.0f, Time.Delta / duration);
-            Position = Utils.Bezier(bubbleFrom, control, bubbleTo, Utils.SineInOut(ease));
-            yield return Co.SingleFrame;
-        }
-
-        yield return .2f;
-        stateMachine.State = States.Normal;
-    }
-
-    private void StBubbleExit()
-    {
-        Audio.Play(Sfx.sfx_bubble_out, Position);
-        sfxBubble?.Stop();
-        PointShadowAlpha = 1;
-    }
-
-    #endregion
-
-    #region Cassette State
-
-    private Cassette? cassette;
-
-    public void EnterCassette(Cassette it)
-    {
-        if (stateMachine.State != States.Cassette)
-        {
-            cassette = it;
-            stateMachine.State = States.Cassette;
-            Position = it.Position - Vec3.UnitZ * 3;
-            drawModel = drawHair = false;
-            PointShadowAlpha = 0;
-            cameraOverride = new(World.Camera.Position, it.Position);
-            Game.Instance.Ambience.Stop();
-            Audio.StopBus(Sfx.bus_gameplay_world, false);
-            Audio.Play(Sfx.sfx_cassette_enter, Position);
-        }
-    }
-
-    private CoEnumerator StCassetteRoutine()
-    {
-        yield return 1.0f;
-
-        if (cassette != null)
-        {
-            if (World.Entry.Submap)
-            {
-                Game.Instance.Goto(new Transition()
+		if ((!Manager.Running || CameraModeCommand.Mode == CameraModeCommand.CameraMode.Dependent) && MathF.Abs(Controls.Move.Value.X) < .5f)
+			climbInputSign = (Vec2.Dot(targetFacing, cameraTargetForward.XY().Normalized()) < -.4f) ? -1 : 1;
+
+		Vec2 inputTranslated = Controls.Move.Value;
+		inputTranslated.X *= climbInputSign;
+
+		// move around
+		if (climbCornerEase <= 0)
+		{
+			var side = wallRight * inputTranslated.X;
+			var up = -wallUp * inputTranslated.Y;
+			var move = side + up;
+
+			// cancel down vector if we're on the ground
+			if (move.Z < 0 && GroundCheck(out _, out _, out _))
+				move.Z = 0;
+
+			// don't climb over ledges into spikes
+			// (you can still climb up into spikes if they're on the same wall as you)
+			if (move.Z > 0 && World.Overlaps<SpikeBlock>(Position + Vec3.UnitZ * ClimbCheckDist + forward * (ClimbCheckDist + 1)))
+				move.Z = 0;
+
+			// don't move left/right around into a spikes
+			// (you can still climb up into spikes if they're on the same wall as you)
+			if (World.Overlaps<SpikeBlock>(SolidWaistTestPos + side + forward * (ClimbCheckDist + 1)))
+				move -= side;
+
+			if (MathF.Abs(move.X) < 0.1f) move.X = 0;
+			if (MathF.Abs(move.Y) < 0.1f) move.Y = 0;
+			if (MathF.Abs(move.Z) < 0.1f) move.Z = 0;
+
+			if (move != Vec3.Zero)
+				SweepTestMove(move * ClimbSpeed * Time.Delta, false);
+
+			if (MathF.Abs(inputTranslated.X) < 0.25f && inputTranslated.Y >= 0)
+			{
+				if (inputTranslated.Y > 0 && !onGround)
+				{
+					if (Time.OnInterval(0.05f))
+					{
+						var at = Position + wallUp * 5 + new Vec3(Facing, 0) * 2;
+						var vel = tPlatformVelocityStorage > 0 ? platformVelocity : Vec3.Zero;
+						World.Request<Dust>().Init(at, vel);
+					}
+					wallSlideSoundEnabled = true;
+				}
+
+				Model.Play("Climb.Idle");
+			}
+			else
+			{
+				Model.Play("Climb.Up");
+
+				if (Time.OnInterval(0.3f))
+					Audio.Play(Sfx.sfx_handhold, Position);
+			}
+
+		}
+		// perform corner lerp
+		else
+		{
+			var ease = 1.0f - climbCornerEase;
+
+			velocity = Vec3.Zero;
+			Position = Vec3.Lerp(climbCornerFrom, climbCornerTo, ease);
+			targetFacing = Calc.AngleToVector(Calc.AngleLerp(climbCornerFacingFrom.Angle(), climbCornerFacingTo.Angle(), ease));
+
+			if (climbCornerCameraFrom.HasValue && climbCornerCameraTo.HasValue)
+			{
+				var angle = Calc.AngleLerp(climbCornerCameraFrom.Value.Angle(), climbCornerCameraTo.Value.Angle(), ease * 0.50f);
+				cameraTargetForward = new Vec3(Calc.AngleToVector(angle), cameraTargetForward.Z);
+			}
+
+			Calc.Approach(ref climbCornerEase, 0, Time.Delta / 0.20f);
+			return;
+		}
+
+		// reset corner lerp data in case we use it
+		climbCornerFrom = Position;
+		climbCornerFacingFrom = targetFacing;
+		climbCornerCameraFrom = null;
+		climbCornerCameraTo = null;
+
+		// move around inner corners
+		if (inputTranslated.X != 0 && World.SolidRayCast(SolidWaistTestPos, wallRight * inputTranslated.X, ClimbCheckDist, out RayHit hit))
+		{
+			Position = hit.Point + (Position - SolidWaistTestPos) + hit.Normal * WallPushoutDist;
+			targetFacing = -hit.Normal.XY();
+			climbingWallNormal = hit.Normal;
+			climbingWallActor = hit.Actor;
+		}
+
+		// snap to walls that slope away from us
+		else if (World.SolidRayCast(SolidWaistTestPos, -climbingWallNormal, ClimbCheckDist + 2, out hit) && ClimbNormalCheck(hit.Normal))
+		{
+			Position = hit.Point + (Position - SolidWaistTestPos) + hit.Normal * WallPushoutDist;
+			targetFacing = -hit.Normal.XY();
+			climbingWallNormal = hit.Normal;
+			climbingWallActor = hit.Actor;
+		}
+
+		// rotate around corners due to input
+		else if (
+			inputTranslated.X != 0 &&
+			World.SolidRayCast(SolidWaistTestPos + forward * (ClimbCheckDist + 1) + wallRight * inputTranslated.X, wallRight * -inputTranslated.X, ClimbCheckDist * 2, out hit) &&
+			ClimbNormalCheck(hit.Normal))
+		{
+			Position = hit.Point + (Position - SolidWaistTestPos) + hit.Normal * WallPushoutDist;
+			targetFacing = -hit.Normal.XY();
+			climbingWallNormal = hit.Normal;
+			climbingWallActor = hit.Actor;
+
+			//if (Vec2.Dot(targetFacing, CameraForward.XY().Normalized()) < -.3f)
+			{
+				climbCornerCameraFrom = cameraTargetForward.XY();
+				climbCornerCameraTo = targetFacing;
+			}
+
+			Model.Play("Climb.Idle");
+			forceCorner = true;
+		}
+		// hops over tops
+		else if (inputTranslated.Y < 0 && !ClimbCheckAt(Vec3.UnitZ, out _))
+		{
+			Audio.Play(Sfx.sfx_climb_ledge, Position);
+			stateMachine.State = States.Normal;
+			velocity = new(targetFacing * ClimbHopForwardSpeed, ClimbHopUpSpeed);
+			tNoMove = ClimbHopNoMoveTime;
+			tClimbCooldown = 0.3f;
+			autoJump = false;
+			AddPlatformVelocity(false);
+			return;
+		}
+		// fall off
+		else if (!TryClimb())
+		{
+			stateMachine.State = States.Normal;
+			return;
+		}
+
+		// update wall slide sfx
+		if (wallSlideSoundEnabled)
+			sfxWallSlide?.Resume();
+		else
+			sfxWallSlide?.Stop();
+
+		// rotate around corners nicely
+		if (forceCorner || (Position - climbCornerFrom).Length() > 2)
+		{
+			climbCornerEase = 1.0f;
+			climbCornerTo = Position;
+			climbCornerFacingTo = targetFacing;
+			Position = climbCornerFrom;
+			targetFacing = climbCornerFacingFrom;
+		}
+	}
+
+	#endregion
+
+	#region StrawbGet State
+
+	private Strawberry? lastStrawb;
+	private Vec2 strawbGetForward;
+
+	private void StStrawbGetEnter()
+	{
+		Model.Play("StrawberryGrab");
+		Model.Flags = ModelFlags.StrawberryGetEffect;
+		Hair.Flags = ModelFlags.StrawberryGetEffect;
+		if (lastStrawb is { } strawb)
+			strawb.Model.Flags = ModelFlags.StrawberryGetEffect;
+		velocity = Vec3.Zero;
+		strawbGetForward = (World.Camera.Position - Position).XY().Normalized();
+		cameraOverride = new(World.Camera.Position, World.Camera.LookAt);
+	}
+
+	private void StStrawbGetExit()
+	{
+		cameraOverride = null;
+
+		Model.Flags = ModelFlags.Default | ModelFlags.Silhouette;
+		Hair.Flags = ModelFlags.Default | ModelFlags.Silhouette;
+
+		if (lastStrawb != null && lastStrawb.BubbleTo.HasValue)
+		{
+			BubbleTo(lastStrawb.BubbleTo.Value);
+		}
+
+		if (lastStrawb != null)
+			World.Destroy(lastStrawb);
+	}
+
+	private void StStrawbGetUpdate()
+	{
+		Facing = targetFacing = Calc.AngleToVector(strawbGetForward.Angle() - MathF.PI / 7);
+		cameraOverride = new CameraOverride(Position + new Vec3(strawbGetForward * 50, 40), Position + Vec3.UnitZ * 6);
+	}
+
+	private CoEnumerator StStrawbGetRoutine()
+	{
+		yield return 2.0f;
+
+		if (lastStrawb != null)
+			Save.CurrentRecord.Strawberries.Add(lastStrawb.ID);
+
+		yield return 1.2f;
+
+		if (World.Entry.Submap)
+		{
+			Save.CurrentRecord.CompletedSubMaps.Add(World.Entry.Map);
+			Game.Instance.Goto(new Transition()
+			{
+				Mode = Transition.Modes.Pop,
+				ToPause = true,
+				ToBlack = new SpotlightWipe(),
+				StopMusic = true,
+				Saving = true
+			});
+		}
+		else
+		{
+			stateMachine.State = States.Normal;
+		}
+	}
+
+	public void StrawbGet(Strawberry strawb)
+	{
+		if (stateMachine.State != States.StrawbGet)
+		{
+			lastStrawb = strawb;
+			stateMachine.State = States.StrawbGet;
+			Position = strawb.Position + Vec3.UnitZ * -3;
+			lastStrawb.Position = Position + Vec3.UnitZ * 12;
+		}
+	}
+
+	#endregion
+
+	#region FeatherStart State
+
+	private float tFeatherStart;
+
+	private void StFeatherStartEnter()
+	{
+		tFeatherStart = FeatherStartTime;
+	}
+
+	private void StFeatherStartExit()
+	{
+	}
+
+	private void StFeatherStartUpdate()
+	{
+		var input = RelativeMoveInput;
+		if (input != Vec2.Zero)
+			targetFacing = input.Normalized();
+
+		SetHairColor(CFeather);
+		HandleFeatherZ();
+
+		tFeatherStart -= Time.Delta;
+		if (tFeatherStart <= 0)
+		{
+			stateMachine.State = States.Feather;
+			return;
+		}
+
+		var velXY = velocity.XY();
+		Calc.Approach(ref velXY, Vec2.Zero, 200 * Time.Delta);
+		velocity = velocity.WithXY(velXY);
+
+		// dashing
+		if (dashes > 0 && tDashCooldown <= 0 && Controls.Dash.ConsumePress())
+		{
+			stateMachine.State = States.Dashing;
+			dashes--;
+			return;
+		}
+	}
+
+	public void FeatherGet(Feather feather)
+	{
+		Audio.Play(Sfx.sfx_dashcrystal, Position);
+		World.HitStun = 0.05f;
+
+		if (stateMachine.State == States.Feather)
+		{
+			tFeather = FeatherDuration;
+			featherZ = feather.Position.Z - 2;
+			Audio.Play(Sfx.sfx_feather_renew, Position);
+		}
+		else
+		{
+			stateMachine.State = States.FeatherStart;
+			featherZ = feather.Position.Z - 2;
+			dashes = Math.Max(dashes, 1);
+			Audio.Play(Sfx.sfx_feather_get, Position);
+		}
+	}
+
+	private void HandleFeatherZ()
+		=> Calc.Approach(ref velocity.Z, (featherZ - Position.Z) * 40, 600 * Time.Delta);
+
+	#endregion
+
+	#region Feather State
+
+	private float featherZ;
+	private float tFeather;
+	private float tFeatherWallBumpCooldown;
+	private bool featherPlayedEndWarn = false;
+
+	private void StFeatherEnter()
+	{
+		velocity = velocity.WithXY(targetFacing * FeatherStartSpeed);
+		tFeather = FeatherDuration;
+		Hair.Roundness = 1;
+		drawModel = false;
+		featherPlayedEndWarn = false;
+		tFeatherWallBumpCooldown = 0;
+		sfxFeather?.Resume();
+	}
+
+	private void StFeatherExit()
+	{
+		Hair.Roundness = 0;
+		drawModel = true;
+		sfxFeather?.Stop();
+	}
+
+	private void StFeatherUpdate()
+	{
+		const float EndWarningTime = 0.8f;
+
+		if (tFeather > EndWarningTime || Time.BetweenInterval(.1f))
+			SetHairColor(CFeather);
+		else if (dashes == 2)
+			SetHairColor(CTwoDashes);
+		else
+			SetHairColor(CNormal);
+
+		HandleFeatherZ();
+
+		var velXY = velocity.XY();
+
+		var input = RelativeMoveInput;
+		if (input != Vec2.Zero)
+			input = input.Normalized();
+		else
+			input = targetFacing;
+
+		velXY = Calc.RotateToward(velXY, input * FeatherFlySpeed, FeatherTurnSpeed * Time.Delta, FeatherAccel * Time.Delta);
+		targetFacing = velXY.Normalized();
+		velocity = velocity.WithXY(velXY);
+
+		tFeather -= Time.Delta;
+		tFeatherWallBumpCooldown -= Time.Delta;
+
+		if (tFeather <= EndWarningTime && !featherPlayedEndWarn)
+		{
+			featherPlayedEndWarn = true;
+			Audio.Play(Sfx.sfx_feather_state_end_warning, Position);
+		}
+
+		if (tFeather <= 0)
+		{
+			stateMachine.State = States.Normal;
+
+			velocity.X *= FeatherExitXYMult;
+			velocity.Y *= FeatherExitXYMult;
+			holdJumpSpeed = velocity.Z = FeatherExitZSpeed;
+			tHoldJump = .1f;
+			autoJump = true;
+			Audio.Play(Sfx.sfx_feather_state_end, Position);
+
+			return;
+		}
+
+		// dashing
+		if (dashes > 0 && tDashCooldown <= 0 && Controls.Dash.ConsumePress())
+		{
+			stateMachine.State = States.Dashing;
+			dashes--;
+			return;
+		}
+
+		// start climbing
+		if (Controls.Climb.Down && TryClimb())
+		{
+			stateMachine.State = States.Climbing;
+			return;
+		}
+	}
+
+	#endregion
+
+	#region Respawn State
+
+	private void StRespawnEnter()
+	{
+		drawModel = drawHair = false;
+		drawOrbs = true;
+		drawOrbsEase = 1;
+		PointShadowAlpha = 0;
+		Audio.Play(Sfx.sfx_revive, Position);
+	}
+
+	private void StRespawnUpdate()
+	{
+		drawOrbsEase -= Time.Delta * 2;
+		if (drawOrbsEase <= 0)
+			stateMachine.State = States.Normal;
+	}
+
+	private void StRespawnExit()
+	{
+		PointShadowAlpha = 1;
+		drawModel = drawHair = true;
+		drawOrbs = false;
+	}
+
+	#endregion
+
+	#region B-Side Strawb Reveal
+
+	// TODO: should maybe be a cutscene object? idk
+
+	private Actor? enterLookAt;
+
+	private void StStrawbRevealEnter()
+	{
+	}
+
+	private CoEnumerator StStrawbRevealRoutine()
+	{
+		yield return Co.SingleFrame;
+
+		enterLookAt = World.Get<Strawberry>();
+
+		if (enterLookAt != null)
+		{
+			targetFacing = (enterLookAt.Position - Position).XY().Normalized();
+
+			var lookAt = enterLookAt.Position + new Vec3(0, 0, 3);
+			var normal = (Position - lookAt).Normalized();
+			var fromPos = lookAt + normal * 40 + Vec3.UnitZ * 20;
+			var toPos = Position + new Vec3(0, 0, 16) + normal * 40;
+			var control = (fromPos + toPos) * .5f + Vec3.UnitZ * 40;
+
+			cameraOverride = new(fromPos, lookAt);
+			World.Camera.Position = cameraOverride.Value.Position;
+			World.Camera.LookAt = cameraOverride.Value.LookAt;
+
+			yield return 1f;
+
+			for (float p = 0; p < 1.0f; p += Time.Delta / 3)
+			{
+				cameraOverride = new(Utils.Bezier(fromPos, control, toPos, Ease.Sine.In(p)), lookAt);
+				yield return Co.SingleFrame;
+			}
+
+			for (float p = 0; p < 1.0f; p += Time.Delta / 1f)
+			{
+				GetCameraTarget(out var lookAtTo, out var posTo, out _);
+
+				var t = Ease.Sine.Out(p);
+				cameraOverride = new(Vec3.Lerp(toPos, posTo, t), Vec3.Lerp(lookAt, lookAtTo, t));
+				yield return Co.SingleFrame;
+			}
+
+			yield return .02f;
+		}
+
+		stateMachine.State = States.Normal;
+	}
+
+	private void StStrawbRevealExit()
+	{
+		cameraOverride = null;
+	}
+
+	#endregion
+
+	#region Dead State
+
+	private void StDeadEnter()
+	{
+		drawModel = drawHair = false;
+		drawOrbs = true;
+		drawOrbsEase = 0;
+		PointShadowAlpha = 0;
+		Audio.Play(Sfx.sfx_death, Position);
+	}
+
+	private void StDeadUpdate()
+	{
+		if (drawOrbsEase < 1.0f)
+			drawOrbsEase += Time.Delta * 2.0f;
+
+		if (!Game.Instance.IsMidTransition && drawOrbsEase > 0.30f)
+		{
+			var entry = World.Entry with { Reason = World.EntryReasons.Respawned };
+			Game.Instance.Goto(new Transition()
+			{
+				Mode = Transition.Modes.Replace,
+				Scene = () => new World(entry),
+				ToBlack = new AngledWipe()
+			});
+		}
+	}
+
+	#endregion
+
+	#region Cutscene State
+
+	private void StCutsceneEnter()
+	{
+		Model.Play("Idle");
+	}
+
+	private void StCutsceneUpdate()
+	{
+		if (World.All<Cutscene>().Count == 0)
+			stateMachine.State = States.Normal;
+	}
+
+	#endregion
+
+	#region Bubble State
+
+	private Vec3 bubbleTo;
+
+	public void BubbleTo(Vec3 target)
+	{
+		bubbleTo = target;
+		Model.Play("StrawberryGrab");
+		stateMachine.State = States.Bubble;
+		PointShadowAlpha = 0;
+		Audio.Play(Sfx.sfx_bubble_in, Position);
+	}
+
+	private CoEnumerator StBubbleRoutine()
+	{
+		Vec3 bubbleFrom = Position;
+		Vec3 control = (bubbleTo + bubbleFrom) * .5f + Vec3.UnitZ * 40;
+		float duration = (bubbleTo - bubbleFrom).Length() / 220;
+		float ease = 0.0f;
+
+		yield return .2f;
+
+		sfxBubble?.Resume();
+		while (ease < 1.0f)
+		{
+			Calc.Approach(ref ease, 1.0f, Time.Delta / duration);
+			Position = Utils.Bezier(bubbleFrom, control, bubbleTo, Utils.SineInOut(ease));
+			yield return Co.SingleFrame;
+		}
+
+		yield return .2f;
+		stateMachine.State = States.Normal;
+	}
+
+	private void StBubbleExit()
+	{
+		Audio.Play(Sfx.sfx_bubble_out, Position);
+		sfxBubble?.Stop();
+		PointShadowAlpha = 1;
+	}
+
+	#endregion
+
+	#region Cassette State
+
+	private Cassette? cassette;
+
+	public void EnterCassette(Cassette it)
+	{
+		if (stateMachine.State != States.Cassette)
+		{
+			cassette = it;
+			stateMachine.State = States.Cassette;
+			Position = it.Position - Vec3.UnitZ * 3;
+			drawModel = drawHair = false;
+			PointShadowAlpha = 0;
+			cameraOverride = new(World.Camera.Position, it.Position);
+			Game.Instance.Ambience.Stop();
+			Audio.StopBus(Sfx.bus_gameplay_world, false);
+			Audio.Play(Sfx.sfx_cassette_enter, Position);
+		}
+	}
+
+	private CoEnumerator StCassetteRoutine()
+	{
+		yield return 1.0f;
+
+		if (cassette != null)
+		{
+			if (World.Entry.Submap)
+			{
+				Game.Instance.Goto(new Transition()
 				{
 					Mode = Transition.Modes.Pop,
 					ToPause = true,
@@ -2289,11 +2291,21 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
             }
         }
 
-        if (!onGround && !Dead && PointShadowAlpha > 0 && !InBubble && Save.Instance.ZGuide)
-        {
-            var distance = 1000.0f;
-            if (World.SolidRayCast(Position, -Vec3.UnitZ, distance, out var hit))
-                distance = hit.Distance;
+		if (drawOrbs && drawOrbsEase > 0)
+		{
+			var ease = drawOrbsEase;
+			var col = Math.Floor(ease * 10) % 2 == 0 ? Hair.Color : Color.White;
+			var s = (ease < 0.5f) ? (0.5f + ease) : (Ease.Cube.Out(1 - (ease - 0.5f) * 2));
+			for (int i = 0; i < 8; i ++)
+			{
+				var rot = (i / 8f + ease * 0.25f) * MathF.Tau;
+				var rad = Ease.Cube.Out(ease) * 16;
+				var pos = SolidWaistTestPos + World.Camera.Left * MathF.Cos(rot) * rad + World.Camera.Up * MathF.Sin(rot) * rad;
+				var size = 3 * s;
+				populate.Add(Sprite.CreateBillboard(World, pos, "circle", size + 0.5f, Color.Black) with { Post = true });
+				populate.Add(Sprite.CreateBillboard(World, pos, "circle", size, col) with { Post = true });
+			}
+		}
 
             for (int i = 3; i < distance; i += 5)
                 populate.Add(Sprite.CreateBillboard(World, Position - Vec3.UnitZ * i, "circle", 0.5f, Color.Gray * 0.50f));
