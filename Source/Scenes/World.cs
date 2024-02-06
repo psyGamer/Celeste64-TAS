@@ -6,8 +6,7 @@ using ModelEntry = (Celeste64.Actor Actor, Celeste64.Model Model);
 
 namespace Celeste64;
 
-public class World : Scene
-{
+public class World : Scene {
     public enum EntryReasons { Entered, Returned, Respawned }
     public readonly record struct EntryInfo(string Map, string CheckPoint, bool Submap, EntryReasons Reason);
 
@@ -30,12 +29,12 @@ public class World : Scene
     private readonly List<ModelEntry> models = [];
     private readonly List<Sprite> sprites = [];
 
-	private Target? postTarget;
-	private readonly Material postMaterial = new();
-	private readonly Batcher batch = new();
+    private Target? postTarget;
+    private readonly Material postMaterial = new();
+    private readonly Batcher batch = new();
     private readonly Batcher3D batch3d = new();
-	private readonly List<Skybox> skyboxes = [];
-	private readonly SpriteRenderer spriteRenderer = new();
+    private readonly List<Skybox> skyboxes = [];
+    private readonly SpriteRenderer spriteRenderer = new();
 
     // Pause Menu, only drawn when actually paused
     private readonly Menu pauseMenu = new();
@@ -51,10 +50,8 @@ public class World : Scene
 
     private bool IsInEndingArea => Get<Player>() is { } player && Overlaps<EndingArea>(player.Position);
 
-    private bool IsPauseEnabled
-    {
-        get
-        {
+    private bool IsPauseEnabled {
+        get {
             if (Game.Instance.IsMidTransition) return false;
             if (Get<Player>() is not Player player) return true;
             return player.IsAbleToPause;
@@ -68,8 +65,7 @@ public class World : Scene
     private int debugUpdateCount;
     public static bool DebugDraw { get; private set; } = false;
 
-    public World(EntryInfo entry)
-    {
+    public World(EntryInfo entry) {
         Entry = entry;
 
         if (tassettingsmenu == null) {
@@ -80,44 +76,32 @@ public class World : Scene
         var stopwatch = Stopwatch.StartNew();
         var map = Assets.Maps[entry.Map];
 
-		// setup pause menu
-		{
-			Menu optionsMenu = new Menu();
-			optionsMenu.Title = Loc.Str("OptionsTitle");
-			optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsFullscreen"), Save.Instance.ToggleFullscreen, () => Save.Instance.Fullscreen));
-			optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsZGuide"), Save.Instance.ToggleZGuide, () => Save.Instance.ZGuide));
-			optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsTimer"), Save.Instance.ToggleTimer, () => Save.Instance.SpeedrunTimer));
-			optionsMenu.Add(new Menu.MultiSelect<Save.InvertCameraOptions>(Loc.Str("OptionsInvertCamera"), Save.Instance.SetCameraInverted, () => Save.Instance.InvertCamera));
-			optionsMenu.Add(new Menu.Spacer());
-			optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsBGM"), 0, 10, () => Save.Instance.MusicVolume, Save.Instance.SetMusicVolume));
-			optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsSFX"), 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
+        // setup pause menu
+        {
+            Menu optionsMenu = new Menu();
+            optionsMenu.Title = Loc.Str("OptionsTitle");
+            optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsFullscreen"), Save.Instance.ToggleFullscreen, () => Save.Instance.Fullscreen));
+            optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsZGuide"), Save.Instance.ToggleZGuide, () => Save.Instance.ZGuide));
+            optionsMenu.Add(new Menu.Toggle(Loc.Str("OptionsTimer"), Save.Instance.ToggleTimer, () => Save.Instance.SpeedrunTimer));
+            optionsMenu.Add(new Menu.MultiSelect<Save.InvertCameraOptions>(Loc.Str("OptionsInvertCamera"), Save.Instance.SetCameraInverted, () => Save.Instance.InvertCamera));
+            optionsMenu.Add(new Menu.Spacer());
+            optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsBGM"), 0, 10, () => Save.Instance.MusicVolume, Save.Instance.SetMusicVolume));
+            optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsSFX"), 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
 
-			pauseMenu.Title = Loc.Str("PauseTitle");
+            pauseMenu.Title = Loc.Str("PauseTitle");
             pauseMenu.Add(new Menu.Option(Loc.Str("PauseResume"), () => SetPaused(false)));
-			pauseMenu.Add(new Menu.Option(Loc.Str("PauseRetry"), () =>
-			{
-				SetPaused(false);
-				Audio.StopBus(Sfx.bus_dialog, false);
-				Get<Player>()?.Kill();
-			}));
-			pauseMenu.Add(new Menu.Submenu(Loc.Str("PauseOptions"), pauseMenu, optionsMenu));
-			pauseMenu.Add(new Menu.Option(Loc.Str("PauseSaveQuit"), () => Game.Instance.Goto(new Transition()
-			{
-				Mode = Transition.Modes.Replace,
-				Scene = () => new Overworld(true),
-				FromPause = true,
-				ToPause = true,
-				ToBlack = new SlideWipe(),
-				Saving = true
-			})));
-		}
-
+            pauseMenu.Add(new Menu.Option(Loc.Str("PauseRetry"), () => {
+                SetPaused(false);
+                Audio.StopBus(Sfx.bus_dialog, false);
+                Get<Player>()?.Kill();
+            }));
+            pauseMenu.Add(new Menu.Submenu(Loc.Str("PauseOptions"), pauseMenu, optionsMenu));
+            
             foreach (CustomSubMenu menu in CustomSubMenu.TopLevelMenus) {
                 pauseMenu.Add(new Menu.Submenu(menu.Name, pauseMenu, menu));
             }
 
-            pauseMenu.Add(new Menu.Option("Save & Quit", () => Game.Instance.Goto(new Transition()
-            {
+            pauseMenu.Add(new Menu.Option(Loc.Str("PauseSaveQuit"), () => Game.Instance.Goto(new Transition() {
                 Mode = Transition.Modes.Replace,
                 Scene = () => new Overworld(true),
                 FromPause = true,
@@ -125,6 +109,8 @@ public class World : Scene
                 ToBlack = new SlideWipe(),
                 Saving = true
             })));
+
+            
         }
 
         // environment
@@ -132,16 +118,13 @@ public class World : Scene
             if (map.SnowAmount > 0)
                 Add(new Snow(map.SnowAmount, map.SnowWind));
 
-            if (!string.IsNullOrEmpty(map.Skybox))
-            {
+            if (!string.IsNullOrEmpty(map.Skybox)) {
                 // single skybox
-                if (Assets.Textures.TryGetValue($"skyboxes/{map.Skybox}", out var skybox))
-                {
+                if (Assets.Textures.TryGetValue($"skyboxes/{map.Skybox}", out var skybox)) {
                     skyboxes.Add(new(skybox));
                 }
                 // group
-                else
-                {
+                else {
                     while (Assets.Textures.TryGetValue($"skyboxes/{map.Skybox}_{skyboxes.Count}", out var nextSkybox))
                         skyboxes.Add(new(nextSkybox));
                 }
@@ -158,12 +141,10 @@ public class World : Scene
 
     }
 
-    public override void Disposed()
-    {
+    public override void Disposed() {
         SetPaused(false);
 
-        while (Actors.Count > 0)
-        {
+        while (Actors.Count > 0) {
             foreach (var it in Actors)
                 Destroy(it);
             ResolveChanges();
@@ -173,20 +154,16 @@ public class World : Scene
         postTarget = null;
     }
 
-    public T Request<T>() where T : Actor, IRecycle, new()
-    {
-        if (recycled.TryGetValue(typeof(T), out var list) && list.Count > 0)
-        {
+    public T Request<T>() where T : Actor, IRecycle, new() {
+        if (recycled.TryGetValue(typeof(T), out var list) && list.Count > 0) {
             return Add((list.Dequeue() as T)!);
         }
-        else
-        {
+        else {
             return Add(new T());
         }
     }
 
-    public T Add<T>(T instance) where T : Actor
-    {
+    public T Add<T>(T instance) where T : Actor {
         adding.Add(instance);
         instance.Destroying = false;
         instance.SetWorld(this);
@@ -194,16 +171,14 @@ public class World : Scene
         return instance;
     }
 
-    public T? Get<T>() where T : class
-    {
+    public T? Get<T>() where T : class {
         var list = GetTypesOf<T>();
         if (list.Count > 0)
             return (list[0] as T)!;
         return null;
     }
 
-    public T? Get<T>(Func<T, bool> predicate) where T : class
-    {
+    public T? Get<T>(Func<T, bool> predicate) where T : class {
         var list = GetTypesOf<T>();
         foreach (var it in list)
             if (predicate((it as T)!))
@@ -211,23 +186,19 @@ public class World : Scene
         return null;
     }
 
-    public List<Actor> All<T>()
-    {
+    public List<Actor> All<T>() {
         return GetTypesOf<T>();
     }
 
-    public void Destroy(Actor actor)
-    {
+    public void Destroy(Actor actor) {
         Debug.Assert(actor.World == this);
         actor.Destroying = true;
         destroying.Add(actor);
     }
 
-    private List<Actor> GetTypesOf<T>()
-    {
+    private List<Actor> GetTypesOf<T>() {
         var type = typeof(T);
-        if (!tracked.TryGetValue(type, out var list))
-        {
+        if (!tracked.TryGetValue(type, out var list)) {
             tracked[type] = list = new();
             foreach (var actor in Actors)
                 if (actor is T)
@@ -238,15 +209,12 @@ public class World : Scene
         return list;
     }
 
-    private void ResolveChanges()
-    {
+    private void ResolveChanges() {
         // resolve adding/removing actors
-        while (adding.Count > 0 || destroying.Count > 0)
-        {
+        while (adding.Count > 0 || destroying.Count > 0) {
             // first add group to world
             int addCount = adding.Count;
-            for (int i = 0; i < addCount; i++)
-            {
+            for (int i = 0; i < addCount; i++) {
                 // sort into buckets
                 var type = adding[i].GetType();
 
@@ -264,8 +232,7 @@ public class World : Scene
                 adding[i].Added();
             adding.RemoveRange(0, addCount);
 
-            for (int i = 0; i < destroying.Count; i++)
-            {
+            for (int i = 0; i < destroying.Count; i++) {
                 var it = destroying[i];
                 it.Destroyed();
 
@@ -280,8 +247,7 @@ public class World : Scene
                 it.SetWorld(null);
 
                 // recycled type
-                if (it is IRecycle)
-                {
+                if (it is IRecycle) {
                     if (!recycled.TryGetValue(type, out var list))
                         recycled[type] = list = new();
                     list.Enqueue(it);
@@ -292,13 +258,11 @@ public class World : Scene
         }
     }
 
-    public override void Update()
-    {
+    public override void Update() {
         debugUpdTimer.Restart();
 
         // Reload shaders
-        if (Input.Keyboard.Pressed(Keys.F5))
-        {
+        if (Input.Keyboard.Pressed(Keys.F5)) {
             Assets.ReloadShaders();
 
             // Can't use material.SetShader, since that causes issues
@@ -306,17 +270,14 @@ public class World : Scene
                             ?? throw new Exception("Material is missing Shader property");
 
             int x = 0, a = 0;
-            foreach (var actor in Actors)
-            {
+            foreach (var actor in Actors) {
                 var fields = actor.GetType().GetFields()
                     .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
                 a++;
 
-                foreach (var field in fields)
-                {
+                foreach (var field in fields) {
                     var model = (Model)field.GetValue(actor)!;
-                    foreach (var material in model.Materials)
-                    {
+                    foreach (var material in model.Materials) {
                         if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
                         m_set_Shader.Invoke(material, [Assets.Shaders[material.Shader.Name]]);
                         x++;
@@ -334,21 +295,18 @@ public class World : Scene
         Audio.SetListener(Camera);
 
         // increment playtime (if not in the ending area)
-        if (!IsInEndingArea)
-        {
+        if (!IsInEndingArea) {
             Save.CurrentRecord.Time += TimeSpan.FromSeconds(Time.Delta);
             Game.Instance.Music.Set("at_baddy", 0);
         }
-        else
-        {
+        else {
             Game.Instance.Music.Set("at_baddy", 1);
         }
 
         // handle strawb counter
         {
             // wiggle when gained
-            if (strawbCounterWas != Save.CurrentRecord.Strawberries.Count)
-            {
+            if (strawbCounterWas != Save.CurrentRecord.Strawberries.Count) {
                 strawbCounterCooldown = 4.0f;
                 strawbCounterWiggle = 1.0f;
                 strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
@@ -374,18 +332,15 @@ public class World : Scene
             DebugDraw = !DebugDraw;
 
         // normal game loop
-        if (!Paused)
-        {
+        if (!Paused) {
             // start pause menu
-            if (Controls.Pause.Pressed && IsPauseEnabled)
-            {
+            if (Controls.Pause.Pressed && IsPauseEnabled) {
                 SetPaused(true);
                 return;
             }
 
             // ONLY update the player when dead
-            if (Get<Player>() is Player player && player.Dead)
-            {
+            if (Get<Player>() is Player player && player.Dead) {
                 player.Update();
                 player.LateUpdate();
                 ResolveChanges();
@@ -393,8 +348,7 @@ public class World : Scene
             }
 
             // ONLY update single cutscene object
-            if (Get<Cutscene>((it) => it.FreezeGame) is Cutscene cs)
-            {
+            if (Get<Cutscene>((it) => it.FreezeGame) is Cutscene cs) {
                 cs.Update();
                 cs.LateUpdate();
                 ResolveChanges();
@@ -402,8 +356,7 @@ public class World : Scene
             }
 
             // pause from hitstun
-            if (HitStun > 0)
-            {
+            if (HitStun > 0) {
                 HitStun -= Time.Delta;
                 return;
             }
@@ -417,8 +370,7 @@ public class World : Scene
             var view = Camera.Frustum.GetBoundingBox().Inflate(10);
             debugUpdateCount = 0;
             foreach (var actor in Actors)
-                if (actor.UpdateOffScreen || actor.WorldBounds.Intersects(view))
-                {
+                if (actor.UpdateOffScreen || actor.WorldBounds.Intersects(view)) {
                     debugUpdateCount++;
                     actor.Update();
                 }
@@ -441,20 +393,16 @@ public class World : Scene
         debugUpdTimer.Stop();
     }
 
-    public void SetPaused(bool paused)
-    {
-        if (paused != Paused)
-        {
+    public void SetPaused(bool paused) {
+        if (paused != Paused) {
             Audio.SetBusPaused(Sfx.bus_gameplay, paused);
             Audio.SetBusPaused(Sfx.bus_bside_music, paused);
 
-            if (paused)
-            {
+            if (paused) {
                 Audio.Play(Sfx.ui_pause);
                 pauseSnapshot = Audio.Play(Sfx.snapshot_pause);
             }
-            else
-            {
+            else {
                 pauseMenu.Index = 0;
                 pauseSnapshot.Stop();
             }
@@ -464,8 +412,7 @@ public class World : Scene
         }
     }
 
-    public bool SolidRayCast(in Vec3 point, in Vec3 direction, float distance, out RayHit hit, bool ignoreBackfaces = true, bool ignoreTransparent = false)
-    {
+    public bool SolidRayCast(in Vec3 point, in Vec3 direction, float distance, out RayHit hit, bool ignoreBackfaces = true, bool ignoreTransparent = false) {
         hit = default;
         float? closest = null;
 
@@ -476,8 +423,7 @@ public class World : Scene
         var solids = Pool.Get<List<Solid>>();
         SolidGrid.Query(solids, new Rect(box.Min.XY(), box.Max.XY()));
 
-        foreach (var solid in solids)
-        {
+        foreach (var solid in solids) {
             if (!solid.Collidable || solid.Destroying)
                 continue;
 
@@ -490,8 +436,7 @@ public class World : Scene
             var verts = solid.WorldVertices;
             var faces = solid.WorldFaces;
 
-            foreach (var face in faces)
-            {
+            foreach (var face in faces) {
                 // only do planes that are facing against us
                 if (ignoreBackfaces && Vec3.Dot(face.Plane.Normal, direction) >= 0)
                     continue;
@@ -501,13 +446,11 @@ public class World : Scene
                     continue;
 
                 // check against each triangle in the face
-                for (int i = 0; i < face.Indices.Count - 2; i++)
-                {
+                for (int i = 0; i < face.Indices.Count - 2; i++) {
                     if (Utils.RayIntersectsTriangle(point, direction,
                                                     verts[face.Indices[0]],
                                                     verts[face.Indices[i + 1]],
-                                                    verts[face.Indices[i + 2]], out float dist))
-                    {
+                                                    verts[face.Indices[i + 2]], out float dist)) {
                         // too far away
                         if (dist > distance)
                             continue;
@@ -534,8 +477,7 @@ public class World : Scene
         return closest.HasValue;
     }
 
-    public StackList8<WallHit> SolidWallCheck(in Vec3 point, float radius)
-    {
+    public StackList8<WallHit> SolidWallCheck(in Vec3 point, float radius) {
         var radiusSquared = radius * radius;
         var flatPlane = new Plane(Vec3.UnitZ, point.Z);
         var flatPoint = point.XY();
@@ -543,8 +485,7 @@ public class World : Scene
         var solids = Pool.Get<List<Solid>>();
         SolidGrid.Query(solids, new Rect(point.X - radius, point.Y - radius, radius * 2, radius * 2));
 
-        foreach (var solid in solids)
-        {
+        foreach (var solid in solids) {
             if (!solid.Collidable || solid.Destroying)
                 continue;
 
@@ -554,8 +495,7 @@ public class World : Scene
             var verts = solid.WorldVertices;
             var faces = solid.WorldFaces;
 
-            foreach (var face in faces)
-            {
+            foreach (var face in faces) {
                 // TODO: ignore planes that are less flat than this but still fairly floor-like?
                 // ignore flat planes
                 if (face.Plane.Normal.Z <= -1 || face.Plane.Normal.Z >= 1)
@@ -568,12 +508,10 @@ public class World : Scene
 
                 WallHit? closestTriangleOnPlane = null;
 
-                for (int i = 0; i < face.Indices.Count - 2; i++)
-                {
+                for (int i = 0; i < face.Indices.Count - 2; i++) {
                     if (Utils.PlaneTriangleIntersection(flatPlane,
                                                         verts[face.Indices[0]], verts[face.Indices[i + 1]], verts[face.Indices[i + 2]],
-                                                        out var line0, out var line1))
-                    {
+                                                        out var line0, out var line1)) {
                         var next = new Vec3(new Line(line0.XY(), line1.XY()).ClosestPoint(flatPoint), point.Z);
                         var diff = (point - next);
                         if (diff.LengthSquared() > radiusSquared)
@@ -588,8 +526,7 @@ public class World : Scene
                     }
                 }
 
-                if (closestTriangleOnPlane.HasValue)
-                {
+                if (closestTriangleOnPlane.HasValue) {
                     hits.Add(closestTriangleOnPlane.Value);
                     if (hits.Count >= hits.Capacity)
                         goto RESULT;
@@ -597,19 +534,16 @@ public class World : Scene
             }
         }
 
-    RESULT:
+        RESULT:
         Pool.Return(solids);
         return hits;
     }
 
-    public bool SolidWallCheckNearest(in Vec3 point, float radius, out WallHit hit)
-    {
+    public bool SolidWallCheckNearest(in Vec3 point, float radius, out WallHit hit) {
         var hits = SolidWallCheck(point, radius);
-        if (hits.Count > 0)
-        {
+        if (hits.Count > 0) {
             var closest = hits[0];
-            for (int i = 1; i < hits.Count; i++)
-            {
+            for (int i = 1; i < hits.Count; i++) {
                 if (hits[i].Pushout.LengthSquared() > closest.Pushout.LengthSquared()) // note reversed because we want the most pushout
                     closest = hits[i];
             }
@@ -617,21 +551,17 @@ public class World : Scene
             hit = closest;
             return true;
         }
-        else
-        {
+        else {
             hit = default;
             return false;
         }
     }
 
-    public bool SolidWallCheckClosestToNormal(in Vec3 point, float radius, Vec3 normal, out WallHit hit)
-    {
+    public bool SolidWallCheckClosestToNormal(in Vec3 point, float radius, Vec3 normal, out WallHit hit) {
         var hits = SolidWallCheck(point, radius);
-        if (hits.Count > 0)
-        {
+        if (hits.Count > 0) {
             hit = hits[0];
-            for (int i = 1; i < hits.Count; i++)
-            {
+            for (int i = 1; i < hits.Count; i++) {
                 var d0 = Vec3.Dot(hit.Normal, normal);
                 var d1 = Vec3.Dot(hits[i].Normal, normal);
                 if (d1 > d0)
@@ -640,30 +570,24 @@ public class World : Scene
 
             return true;
         }
-        else
-        {
+        else {
             hit = default;
             return false;
         }
     }
 
-    public bool Overlaps<T>(Vec3 point, Func<T, bool>? predicate = null) where T : Actor
-    {
+    public bool Overlaps<T>(Vec3 point, Func<T, bool>? predicate = null) where T : Actor {
         return OverlapsFirst(point, predicate) != null;
     }
 
-    public T? OverlapsFirst<T>(Vec3 point, Func<T, bool>? predicate = null) where T : Actor
-    {
-        if (typeof(T).IsAssignableTo(typeof(Solid)))
-        {
+    public T? OverlapsFirst<T>(Vec3 point, Func<T, bool>? predicate = null) where T : Actor {
+        if (typeof(T).IsAssignableTo(typeof(Solid))) {
             var solids = Pool.Get<List<Solid>>();
             SolidGrid.Query(solids, new Rect(point.X - 1, point.Y - 1, 2, 2));
 
-            foreach (var solid in solids)
-            {
+            foreach (var solid in solids) {
                 if (solid is T instance)
-                    if (instance.WorldBounds.Contains(point) && (predicate == null || predicate(instance)))
-                    {
+                    if (instance.WorldBounds.Contains(point) && (predicate == null || predicate(instance))) {
                         Pool.Return(solids);
                         return instance;
                     }
@@ -671,8 +595,7 @@ public class World : Scene
 
             Pool.Return(solids);
         }
-        else
-        {
+        else {
             foreach (var actor in All<T>())
                 if (actor.WorldBounds.Contains(point) && (predicate == null || predicate((actor as T)!)))
                     return (actor as T)!;
@@ -681,8 +604,7 @@ public class World : Scene
         return null;
     }
 
-    public override void Render(Target target)
-    {
+    public override void Render(Target target) {
         debugRndTimer.Restart();
         Camera.Target = target;
         target.Clear(0x444c83, 1, 0, ClearMask.All);
@@ -705,8 +627,7 @@ public class World : Scene
             models.Clear();
 
             // collect point shadows
-            foreach (var actor in All<ICastPointShadow>())
-            {
+            foreach (var actor in All<ICastPointShadow>()) {
                 var alpha = (actor as ICastPointShadow)!.PointShadowAlpha;
                 if (alpha > 0 &&
                     Camera.Frustum.Contains(actor.WorldBounds.Conflate(actor.WorldBounds - Vec3.UnitZ * 1000)))
@@ -714,8 +635,7 @@ public class World : Scene
             }
 
             // collect models & sprites
-            foreach (var actor in Actors)
-            {
+            foreach (var actor in Actors) {
                 if (!Camera.Frustum.Contains(actor.WorldBounds.Inflate(1)))
                     continue;
 
@@ -736,8 +656,7 @@ public class World : Scene
         // draw the skybox first
         {
             var shift = new Vec3(Camera.Position.X, Camera.Position.Y, Camera.Position.Z);
-            for (int i = 0; i < skyboxes.Count; i++)
-            {
+            for (int i = 0; i < skyboxes.Count; i++) {
                 skyboxes[i].Render(Camera,
                                    Matrix.CreateRotationZ(i * GeneralTimer * 0.01f) *
                                    Matrix.CreateScale(1, 1, 0.5f) *
@@ -786,8 +705,7 @@ public class World : Scene
         }
 
         // strawberry collect effect
-        if (Camera.Target != null && models.Any((it) => it.Model.Flags.Has(ModelFlags.StrawberryGetEffect)))
-        {
+        if (Camera.Target != null && models.Any((it) => it.Model.Flags.Has(ModelFlags.StrawberryGetEffect))) {
             var img = Assets.Subtextures["splash"];
             var orig = new Vec2(img.Width, img.Height) / 2;
 
@@ -804,33 +722,30 @@ public class World : Scene
         }
 
         // render colliders
-        if (Save.Instance.Hitboxes)
-        {
+        if (Save.Instance.Hitboxes) {
             foreach (var actor in All<IHaveRenderCollider>())
                 (actor as IHaveRenderCollider).RenderCollider(batch3d);
             batch3d.Render(ref state);
             batch3d.Clear();
         }
 
-		// ui
-		{
-			batch.SetSampler(new TextureSampler(TextureFilter.Linear, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
-			var bounds = new Rect(0, 0, target.Width, target.Height);
-			var font = Language.Current.SpriteFont;
+        // ui
+        {
+            batch.SetSampler(new TextureSampler(TextureFilter.Linear, TextureWrap.ClampToEdge, TextureWrap.ClampToEdge));
+            var bounds = new Rect(0, 0, target.Width, target.Height);
+            var font = Language.Current.SpriteFont;
 
             foreach (var actor in All<IHaveUI>())
                 (actor as IHaveUI)!.RenderUI(batch, bounds);
 
             // pause menu
-            if (Paused)
-            {
+            if (Paused) {
                 batch.Rect(bounds, Color.Black * 0.70f);
                 pauseMenu.Render(batch, bounds.Center);
             }
 
             // debug
-            if (DebugDraw)
-            {
+            if (DebugDraw) {
                 var updateMs = debugUpdTimer.Elapsed.TotalMilliseconds;
                 var renderMs = lastDebugRndTime.TotalMilliseconds;
                 var frameMs = debugFpsTimer.Elapsed.TotalMilliseconds;
@@ -845,27 +760,24 @@ public class World : Scene
             // stats
             {
                 var at = bounds.TopLeft + new Vec2(4, 8);
-                if (IsInEndingArea || Save.Instance.SpeedrunTimer)
-                {
+                if (IsInEndingArea || Save.Instance.SpeedrunTimer) {
                     UI.Timer(batch, Save.CurrentRecord.Time, at, 0.0f, IsInEndingArea ? Color.CornflowerBlue : Color.White);
                     at.Y += UI.IconSize + 4;
                 }
 
-                if (strawbCounterEase > 0)
-                {
+                if (strawbCounterEase > 0) {
                     var wiggle = 1 + MathF.Sin(strawbCounterWiggle * MathF.Tau * 2) * strawbCounterWiggle * .3f;
 
-					batch.PushMatrix(
-						Matrix3x2.CreateTranslation(0, -UI.IconSize / 2) *
-						Matrix3x2.CreateScale(wiggle) *
-						Matrix3x2.CreateTranslation(at + new Vec2(-60 * (1 - Ease.Cube.Out(strawbCounterEase)), UI.IconSize / 2)));
-					UI.Strawberries(batch, Save.CurrentRecord.Strawberries.Count, Vec2.Zero);
-					batch.PopMatrix();
-				}
+                    batch.PushMatrix(
+                        Matrix3x2.CreateTranslation(0, -UI.IconSize / 2) *
+                        Matrix3x2.CreateScale(wiggle) *
+                        Matrix3x2.CreateTranslation(at + new Vec2(-60 * (1 - Ease.Cube.Out(strawbCounterEase)), UI.IconSize / 2)));
+                    UI.Strawberries(batch, Save.CurrentRecord.Strawberries.Count, Vec2.Zero);
+                    batch.PopMatrix();
+                }
 
                 // show version number when paused / in ending area
-                if (IsInEndingArea || Paused)
-                {
+                if (IsInEndingArea || Paused) {
                     UI.Text(batch, Game.VersionString, bounds.BottomLeft + new Vec2(4, -4) * Game.RelativeScale, new Vec2(0, 1), Color.White * 0.25f);
                 }
             }
@@ -890,13 +802,10 @@ public class World : Scene
         debugRndTimer.Stop();
     }
 
-    private void ApplyPostEffects()
-    {
+    private void ApplyPostEffects() {
         // perform post processing effects
-        if (Camera.Target != null)
-        {
-            if (postTarget == null || postTarget.Width != Camera.Target.Width || postTarget.Height != Camera.Target.Height)
-            {
+        if (Camera.Target != null) {
+            if (postTarget == null || postTarget.Width != Camera.Target.Width || postTarget.Height != Camera.Target.Height) {
                 postTarget?.Dispose();
                 postTarget = new(Camera.Target.Width, Camera.Target.Height);
             }
@@ -925,10 +834,8 @@ public class World : Scene
         }
     }
 
-    private void RenderModels(ref RenderState state, List<ModelEntry> models, ModelFlags flags)
-    {
-        foreach (var it in models)
-        {
+    private void RenderModels(ref RenderState state, List<ModelEntry> models, ModelFlags flags) {
+        foreach (var it in models) {
             if (!it.Model.Flags.Has(flags))
                 continue;
 
