@@ -31,6 +31,8 @@ public static class TASControls
     public static readonly VirtualButton Freecam = new("Freecam");
     public static readonly VirtualButton ToggleInfoGUI = new("ToggleInfoGUI");
 
+    public static readonly VirtualStick FreecamMove = new("FreeCamMove", VirtualAxis.Overlaps.TakeNewer, 0.35f);
+
     public static void Load()
     {
         StartStop.Clear();
@@ -61,6 +63,11 @@ public static class TASControls
 
         Freecam.Clear();
         Freecam.Add(Keys.M);
+
+        FreecamMove.Clear();
+        FreecamMove.AddLeftJoystick(0);
+        FreecamMove.AddDPad(0);
+        FreecamMove.Add(Keys.A, Keys.D, Keys.W, Keys.S);
 
         ToggleInfoGUI.Clear();
         ToggleInfoGUI.Add(Keys.F12);
