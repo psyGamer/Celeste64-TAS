@@ -1,4 +1,3 @@
-using Celeste64.Scenes.SubMenus;
 using Celeste64.TAS;
 using Celeste64.TAS.Render;
 using System.Diagnostics;
@@ -42,8 +41,6 @@ public class World : Scene
     private readonly Menu pauseMenu = new();
     private AudioHandle pauseSnapshot;
 
-    private static TASSettingsMenu? tassettingsmenu;
-
     // makes the Strawberry UI wiggle when one is collected
     private float strawbCounterWiggle = 0;
     private float strawbCounterCooldown = 0;
@@ -73,14 +70,15 @@ public class World : Scene
     {
         Entry = entry;
 
-        if (tassettingsmenu == null)
-        {
-            CustomSubMenu.pauseMenu = pauseMenu;
-            tassettingsmenu = new TASSettingsMenu();
-        }
-
         var stopwatch = Stopwatch.StartNew();
         var map = Assets.Maps[entry.Map];
+
+        Camera.NearPlane = 20;
+        Camera.FarPlane = 800;
+        Camera.FOVMultiplier = 1;
+
+        strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
+        strawbCounterWiggle = 0;
 
         // setup pause menu
         {
@@ -94,6 +92,10 @@ public class World : Scene
             optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsBGM"), 0, 10, () => Save.Instance.MusicVolume, Save.Instance.SetMusicVolume));
             optionsMenu.Add(new Menu.Slider(Loc.Str("OptionsSFX"), 0, 10, () => Save.Instance.SfxVolume, Save.Instance.SetSfxVolume));
 
+            Menu tasMenu = new();
+            tasMenu.Title = Loc.Str("TAS_OptionsTitle");
+            tasMenu.Add(new Menu.Toggle(Loc.Str("TAS_SimplifiedGraphics"), Save.Instance.ToggleSimplifiedGraphics, () => Save.Instance.SimplifiedGraphics));
+
             pauseMenu.Title = Loc.Str("PauseTitle");
             pauseMenu.Add(new Menu.Option(Loc.Str("PauseResume"), () => SetPaused(false)));
             pauseMenu.Add(new Menu.Option(Loc.Str("PauseRetry"), () =>
@@ -103,12 +105,7 @@ public class World : Scene
                 Get<Player>()?.Kill();
             }));
             pauseMenu.Add(new Menu.Submenu(Loc.Str("PauseOptions"), pauseMenu, optionsMenu));
-
-            foreach (CustomSubMenu menu in CustomSubMenu.TopLevelMenus)
-            {
-                pauseMenu.Add(new Menu.Submenu(menu.Name, pauseMenu, menu));
-            }
-
+            pauseMenu.Add(new Menu.Submenu(Loc.Str("TAS_PauseOptions"), pauseMenu, tasMenu));
             pauseMenu.Add(new Menu.Option(Loc.Str("PauseSaveQuit"), () => Game.Instance.Goto(new Transition()
             {
                 Mode = Transition.Modes.Replace,
@@ -424,13 +421,15 @@ public class World : Scene
         {
             if (Controls.Pause.ConsumePress() || (pauseMenu.IsInMainMenu && Controls.Cancel.ConsumePress()))
             {
+                pauseMenu.CloseSubMenus();
                 SetPaused(false);
                 Audio.Play(Sfx.ui_unpause);
-                pauseMenu.CloseSubMenus();
             }
             else
-                {pauseMenu.Update();
-        }}
+            {
+                pauseMenu.Update();
+            }
+        }
 
         debugUpdTimer.Stop();
     }
