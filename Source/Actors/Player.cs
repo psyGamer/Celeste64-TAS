@@ -716,7 +716,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                 return Vec2.Zero;
 
             Vec2 forward, side;
-            var cameraForward = World.Camera.Forward.XY();
+            var cameraForward = (World.Camera.LookAt - World.Camera.Position).Normalized().XY();
             if (cameraForward.X == 0 && cameraForward.Y == 0)
                 forward = targetFacing;
             else
@@ -1575,6 +1575,13 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
             WallJump();
             return;
         }
+
+		if (dashes > 0 && tDashCooldown <= 0 && Controls.Dash.ConsumePress())
+		{
+			stateMachine.State = States.Dashing;
+			dashes--;
+			return;
+		}
 
         CancelGroundSnap();
 

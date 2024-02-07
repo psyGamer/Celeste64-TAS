@@ -369,7 +369,7 @@ public class World : Scene
         if (!Paused)
         {
             // start pause menu
-            if (Controls.Pause.Pressed && IsPauseEnabled)
+            if (Controls.Pause.ConsumePress() && IsPauseEnabled)
             {
                 SetPaused(true);
                 return;
@@ -422,15 +422,15 @@ public class World : Scene
         // unpause
         else
         {
-            if ((Controls.Pause.Pressed || Controls.Cancel.Pressed) && pauseMenu.IsInMainMenu)
+            if (Controls.Pause.ConsumePress() || (pauseMenu.IsInMainMenu && Controls.Cancel.ConsumePress()))
             {
                 SetPaused(false);
                 Audio.Play(Sfx.ui_unpause);
                 pauseMenu.CloseSubMenus();
             }
             else
-                pauseMenu.Update();
-        }
+                {pauseMenu.Update();
+        }}
 
         debugUpdTimer.Stop();
     }
@@ -495,12 +495,12 @@ public class World : Scene
                     continue;
 
                 // check against each triangle in the face
-                for (int i = 0; i < face.Indices.Count - 2; i++)
+                for (int i = 0; i < face.VertexCount - 2; i++)
                 {
                     if (Utils.RayIntersectsTriangle(point, direction,
-                                                    verts[face.Indices[0]],
-                                                    verts[face.Indices[i + 1]],
-                                                    verts[face.Indices[i + 2]], out float dist))
+                                                    verts[face.VertexStart + 0],
+                                                    verts[face.VertexStart + i + 1],
+                                                    verts[face.VertexStart + i + 2], out float dist))
                     {
                         // too far away
                         if (dist > distance)
@@ -562,10 +562,10 @@ public class World : Scene
 
                 WallHit? closestTriangleOnPlane = null;
 
-                for (int i = 0; i < face.Indices.Count - 2; i++)
+                for (int i = 0; i < face.VertexCount - 2; i++)
                 {
                     if (Utils.PlaneTriangleIntersection(flatPlane,
-                                                        verts[face.Indices[0]], verts[face.Indices[i + 1]], verts[face.Indices[i + 2]],
+                                                        verts[face.VertexStart + 0], verts[face.VertexStart + i + 1], verts[face.VertexStart + i + 2],
                                                         out var line0, out var line1))
                     {
                         var next = new Vec3(new Line(line0.XY(), line1.XY()).ClosestPoint(flatPoint), point.Z);
