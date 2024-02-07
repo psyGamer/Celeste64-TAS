@@ -9,8 +9,10 @@ internal class EnableRunAttribute : Attribute;
 [AttributeUsage(AttributeTargets.Method)]
 internal class DisableRunAttribute : Attribute;
 
-public static class Manager {
-    public enum State {
+public static class Manager
+{
+    public enum State
+    {
         Disabled,
         Running, Paused, FrameAdvance,
         FastForward,
@@ -33,12 +35,14 @@ public static class Manager {
     public static Vec2 prevMousePosition;
     public static Vec2 MouseDelta => Foster.Framework.Input.Mouse.Position - prevMousePosition;
 
-    static Manager() {
+    static Manager()
+    {
         AttributeUtils.CollectMethods<EnableRunAttribute>();
         AttributeUtils.CollectMethods<DisableRunAttribute>();
     }
 
-    public static void EnableRun() {
+    public static void EnableRun()
+    {
         Log.Info($"Starting TAS: {InputController.TasFilePath}");
 
         CurrState = State.Running;
@@ -51,7 +55,8 @@ public static class Manager {
         TASLevelRecord.ID = string.Empty;
     }
 
-    public static void DisableRun() {
+    public static void DisableRun()
+    {
         Log.Info("Stopping TAS");
 
         CurrState = State.Disabled;
@@ -60,22 +65,26 @@ public static class Manager {
         Controller.Stop();
     }
 
-    public static void Update() {
+    public static void Update()
+    {
         CurrState = NextState;
         if (!Running) return;
 
         if (Save.Instance.LevelID != TASLevelRecord.ID)
             TASLevelRecord = new Save.LevelRecord { ID = Save.Instance.LevelID };
 
-        if (!IsPaused()) {
+        if (!IsPaused())
+        {
             Controller.AdvanceFrame(out bool canPlayback);
 
-            if (!canPlayback) {
+            if (!canPlayback)
+            {
                 DisableRun();
             }
         }
 
-        switch (CurrState) {
+        switch (CurrState)
+        {
         case State.Running:
             if (TASControls.PauseResume.ConsumePress())
                 NextState = State.Paused;
@@ -101,17 +110,20 @@ public static class Manager {
         }
     }
 
-    public static void AbortTas(string message) {
+    public static void AbortTas(string message)
+    {
         Log.Error(message);
         DisableRun();
     }
 
-    public static bool IsLoading() {
+    public static bool IsLoading()
+    {
         return !(Game.Instance.transitionStep == Game.TransitionStep.FadeIn ||
                  Game.Instance.transitionStep == Game.TransitionStep.None);
     }
 
-    public static bool IsPaused() {
+    public static bool IsPaused()
+    {
         if (IsLoading()) return false;
         return CurrState == State.Paused;
     }
