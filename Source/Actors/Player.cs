@@ -256,6 +256,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         GetCameraTarget(out var orig, out var target, out _);
         World.Camera.LookAt = target;
         World.Camera.Position = orig;
+        World.Camera.FarPlane = Save.Instance.SimplifiedGraphics ? 8000 : 800;
 
         if (Save.Instance.Freecam != Save.FreecamMode.Free) {
             Manager.FreeCamPosition = Position;
@@ -2112,10 +2113,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         if (drawOrbs && drawOrbsEase > 0) {
             var ease = drawOrbsEase;
             var col = Math.Floor(ease * 10) % 2 == 0 ? Hair.Color : Color.White;
-            var s = (ease < 0.5f) ? (0.5f + ease) : (Ease.CubeOut(1 - (ease - 0.5f) * 2));
+            var s = (ease < 0.5f) ? (0.5f + ease) : (Ease.Cube.Out(1 - (ease - 0.5f) * 2));
             for (int i = 0; i < 8; i++) {
                 var rot = (i / 8f + ease * 0.25f) * MathF.Tau;
-                var rad = Ease.CubeOut(ease) * 16;
+                var rad = Ease.Cube.Out(ease) * 16;
                 var pos = SolidWaistTestPos + World.Camera.Left * MathF.Cos(rot) * rad + World.Camera.Up * MathF.Sin(rot) * rad;
                 var size = 3 * s;
                 populate.Add(Sprite.CreateBillboard(World, pos, "circle", size + 0.5f, Color.Black) with { Post = true });
@@ -2149,7 +2150,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                 continue;
 
             // I HATE this alpha fade out but don't have time to make some kind of full-model fade out effect
-            var alpha = Ease.CubeOut(Calc.ClampedMap(trail.Percent, 0.5f, 1.0f, 1, 0));
+            var alpha = Ease.Cube.Out(Calc.ClampedMap(trail.Percent, 0.5f, 1.0f, 1, 0));
 
             foreach (var mat in trail.Model.Materials)
                 mat.Color = trail.Color * alpha;

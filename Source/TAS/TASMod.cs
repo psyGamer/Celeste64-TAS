@@ -43,29 +43,7 @@ public class TASMod
 
         if (TASControls.SimplifiedGraphics.ConsumePress())
         {
-            Save.Instance.SimplifiedGraphics = !Save.Instance.SimplifiedGraphics;
-            Save.Instance.SyncSettings();
-
-            if (Game.Scene is World world)
-            {
-                world.Camera.FarPlane = Save.Instance.SimplifiedGraphics ? 8000 : 800;
-
-                foreach (var actor in world.Actors)
-                {
-                    var fields = actor.GetType().GetFields()
-                        .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
-
-                    foreach (var field in fields)
-                    {
-                        var model = (Model) field.GetValue(actor)!;
-                        foreach (var material in model.Materials)
-                        {
-                            if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
-                            material.Simplified = Save.Instance.SimplifiedGraphics;
-                        }
-                    }
-                }
-            }
+            Save.Instance.ToggleSimplifiedGraphics();
         }
 
         if (TASControls.Hitboxes.ConsumePress())
