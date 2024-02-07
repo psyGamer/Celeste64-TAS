@@ -305,31 +305,15 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                 MathF.Sin(Manager.FreecamRotation.X - Calc.HalfPI),
                 MathF.Cos(Manager.FreecamRotation.X - Calc.HalfPI));
 
-            // if not currently in TAS, proceed with normal movement
-            if (!Manager.Running)
-            {
-                Manager.FreecamPosition.X -= Controls.Move.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
-                Manager.FreecamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
-                Manager.FreecamPosition.X -= Controls.Move.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
-                Manager.FreecamPosition.Y -= Controls.Move.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.X -= TASControls.FreecamMove.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.Y -= TASControls.FreecamMove.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.X -= TASControls.FreecamMove.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.Y -= TASControls.FreecamMove.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
 
-                if (Input.Keyboard.Down(Keys.Space))
-                    Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
-                if (Input.Keyboard.Down(Keys.LeftControl))
-                    Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
-            }
-            else
-            {
-                Manager.FreecamPosition.X -= TASControls.FreeCamMove.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
-                Manager.FreecamPosition.Y -= TASControls.FreeCamMove.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
-                Manager.FreecamPosition.X -= TASControls.FreeCamMove.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
-                Manager.FreecamPosition.Y -= TASControls.FreeCamMove.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
-
-                if (Input.Keyboard.Down(Keys.Space))
-                    Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
-                if (Input.Keyboard.Down(Keys.LeftControl))
-                    Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
-            }
+            if (Input.Keyboard.Down(Keys.Space))
+                Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
+            if (Input.Keyboard.Down(Keys.LeftControl))
+                Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
         }
 
         App.MouseVisible = !(Input.Mouse.Down(MouseButtons.Left) &&
