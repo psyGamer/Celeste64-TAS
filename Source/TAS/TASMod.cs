@@ -10,6 +10,7 @@ public class TASMod
     private static ILHook? il_App_Tick;
     private static Hook? on_App_Tick_Update;
     private static Hook? on_Input_Step;
+    private static Hook? on_Time_Advance;
 
     public static void Initialize()
     {
@@ -18,6 +19,7 @@ public class TASMod
         il_App_Tick = new ILHook(typeof(App).GetMethod("Tick", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), IL_App_Tick);
         on_App_Tick_Update = new Hook(typeof(App).GetMethod("<Tick>g__Update|69_0", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_App_Tick_Update);
         on_Input_Step = new Hook(typeof(Foster.Framework.Input).GetMethod("Step", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException(), On_Input_Step);
+        on_Time_Advance = new Hook(typeof(Time).GetMethod(nameof(Time.Advance)) ?? throw new InvalidOperationException(), On_Time_Advance);
     }
 
     public static void Deinitialize()
@@ -25,6 +27,7 @@ public class TASMod
         il_App_Tick?.Dispose();
         on_App_Tick_Update?.Dispose();
         on_Input_Step?.Dispose();
+        on_Time_Advance?.Dispose();
     }
 
     public static void Update()
@@ -155,5 +158,14 @@ public class TASMod
             orig();
 
         // Updating hijacked input is done inside InputHelper.FeedInputs()
+    }
+
+    private delegate void orig_Time_Advance(TimeSpan delta);
+    private static void On_Time_Advance(orig_Time_Advance orig, TimeSpan delta)
+    {
+        // Don't advance time while paused, to avoid buffer timings running out
+        if (Manager.IsPaused()) return;
+
+        orig(delta);
     }
 }
