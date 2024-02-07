@@ -136,25 +136,24 @@ public class Game : Module
 
 	public override void Update()
 	{
-        // NOTE: Everything else is handled inside the TASMod hooks
+        // NOTE: Pre-update stuff (like inputs) is handled inside the TASMod hooks
         if (Manager.IsPaused())
         {
-            // update top scene
-            if (scenes.TryPeek(out var wscene)) {
-                if (wscene is World world)
-                {
-                    var pausing =
-                        transitionStep == TransitionStep.FadeIn && transition.FromPause ||
-                        transitionStep == TransitionStep.FadeOut && transition.ToPause;
-                    var player = world.Get<Player>();
-                    if (player!=null && !pausing)
-                    {
-                        player.Update();
-                        player.LateUpdate();
-                    }
+            // Manually update the camera, since the player is currently paused
+            if (Scene is World world) {
+                bool pausing =
+                    transitionStep == TransitionStep.FadeIn && transition.FromPause ||
+                    transitionStep == TransitionStep.FadeOut && transition.ToPause;
 
+                var player = world.Get<Player>();
+                if (player != null && !pausing)
+                {
+                    player.UpdateCamera();
+                    player.LateUpdateCamera();
                 }
             }
+
+            // Cancel any further logic
             return;
         }
 

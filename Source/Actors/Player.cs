@@ -276,85 +276,10 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
     public override void Update()
     {
-        if (Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free)
-        {
-            // Freecam rotation
-            if (Input.Mouse.Down(MouseButtons.Left))
-            {
-                //if the mouse moves too much, it means, the Game reset the mouse somewhere
-                //the camera would behave weirdly, if this was not there
-                //TODO: find a way to limit Mouse Movement on Load?
-                if (Manager.MouseDelta.LengthSquared() > 10000) return;
-                Manager.FreecamRotation.X += Manager.MouseDelta.X * Time.Delta * Manager.FreecamRotateSpeed;
-                Manager.FreecamRotation.Y += Manager.MouseDelta.Y * Time.Delta * Manager.FreecamRotateSpeed;
-                Manager.FreecamRotation.X %= 360.0f * Calc.DegToRad;
-                Manager.FreecamRotation.Y = Math.Clamp(Manager.FreecamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
-            }
+        UpdateCamera();
 
-            // Freecam zoom
-            Manager.FreecamDistance -= Input.Mouse.Wheel.Y * Manager.FreecamZoomSpeed;
-        }
-
-        if (Save.Instance.Freecam == Save.FreecamMode.Free)
-        {
-            // Freecam movement
-            var cameraForward = new Vec2(
-                MathF.Sin(Manager.FreecamRotation.X),
-                MathF.Cos(Manager.FreecamRotation.X));
-            var cameraRight = new Vec2(
-                MathF.Sin(Manager.FreecamRotation.X - Calc.HalfPI),
-                MathF.Cos(Manager.FreecamRotation.X - Calc.HalfPI));
-
-            Manager.FreecamPosition.X -= TASControls.FreecamMove.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
-            Manager.FreecamPosition.Y -= TASControls.FreecamMove.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
-            Manager.FreecamPosition.X -= TASControls.FreecamMove.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
-            Manager.FreecamPosition.Y -= TASControls.FreecamMove.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
-
-            if (Input.Keyboard.Down(Keys.Space))
-                Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
-            if (Input.Keyboard.Down(Keys.LeftControl))
-                Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
-        }
-
-        App.MouseVisible = !(Input.Mouse.Down(MouseButtons.Left) &&
-                             Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free);
-
-
-        // only update camera if not dead and not in freecam
-        if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead &&
-            stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
-        {
-            // Rotate Camera
-            {
-                var invertX = Save.Instance.InvertCamera == Save.InvertCameraOptions.X || Save.Instance.InvertCamera == Save.InvertCameraOptions.Both;
-                var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
-                rot -= Controls.Camera.Value.X * Time.Delta * 4 * (invertX ? -1 : 1);
-
-                var angle = Calc.AngleToVector(rot);
-                cameraTargetForward = new(angle, 0);
-            }
-
-            // Move Camera in / out
-            if (Controls.Camera.Value.Y != 0)
-            {
-                var invertY = Save.Instance.InvertCamera == Save.InvertCameraOptions.Y || Save.Instance.InvertCamera == Save.InvertCameraOptions.Both;
-                cameraTargetDistance += Controls.Camera.Value.Y * Time.Delta * (invertY ? -1 : 1);
-                cameraTargetDistance = Calc.Clamp(cameraTargetDistance, 0, 1);
-            }
-            else
-            {
-                const float interval = 1f / 3;
-                const float threshold = .1f;
-                if (cameraTargetDistance % interval < threshold || cameraTargetDistance % interval > interval - threshold)
-                    Calc.Approach(ref cameraTargetDistance, Calc.Snap(cameraTargetDistance, interval), Time.Delta / 2);
-            }
-        }
-
-        // Dont run any player logic while in freecam and TAS disabled
+        // Dont run any player logic while in freecam and TAS is disabled
         if (!Manager.Running && Save.Instance.Freecam != Save.FreecamMode.Disabled) return;
-
-        //cancel Update before Player Movement
-        if (Manager.IsPaused()) return;
 
         // don't do anything if dead
         if (stateMachine.State is States.Respawn or States.Dead or States.Cutscene)
@@ -454,60 +379,193 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
     public override void LateUpdate()
     {
-        if (!Manager.IsPaused())
+        // ground checks
         {
-            // ground checks
+            bool prevOnGround = onGround;
+            onGround = GroundCheck(out var pushout, out var normal, out _);
+            if (onGround)
+                Position += pushout;
+
+            if (tGroundSnapCooldown <= 0 && prevOnGround && !onGround)
             {
-                bool prevOnGround = onGround;
-                onGround = GroundCheck(out var pushout, out var normal, out _);
-                if (onGround)
-                    Position += pushout;
-
-                if (tGroundSnapCooldown <= 0 && prevOnGround && !onGround)
+                // try to ground snap?
+                if (World.SolidRayCast(Position, -Vec3.UnitZ, 5, out var hit) && FloorNormalCheck(hit.Normal))
                 {
-                    // try to ground snap?
-                    if (World.SolidRayCast(Position, -Vec3.UnitZ, 5, out var hit) && FloorNormalCheck(hit.Normal))
-                    {
-                        Position = hit.Point;
-                        onGround = GroundCheck(out _, out normal, out _);
-                    }
+                    Position = hit.Point;
+                    onGround = GroundCheck(out _, out normal, out _);
                 }
+            }
 
-                if (onGround)
+            if (onGround)
+            {
+                autoJump = false;
+                groundNormal = normal;
+                tCoyote = CoyoteTime;
+                coyoteZ = Position.Z;
+                if (tDashResetCooldown <= 0)
+                    RefillDash();
+            }
+            else
+                groundNormal = Vec3.UnitZ;
+
+            if (!prevOnGround && onGround)
+            {
+                float t = Calc.ClampedMap(previousVelocity.Z, 0, MaxFall);
+                ModelScale = Vec3.Lerp(Vec3.One, new(1.4f, 1.4f, .6f), t);
+                stateMachine.CallEvent(Events.Land);
+
+                if (!Game.Instance.IsMidTransition && !InBubble)
                 {
-                    autoJump = false;
-                    groundNormal = normal;
-                    tCoyote = CoyoteTime;
-                    coyoteZ = Position.Z;
-                    if (tDashResetCooldown <= 0)
-                        RefillDash();
-                }
-                else
-                    groundNormal = Vec3.UnitZ;
+                    Audio.Play(Sfx.sfx_land, Position);
 
-                if (!prevOnGround && onGround)
-                {
-                    float t = Calc.ClampedMap(previousVelocity.Z, 0, MaxFall);
-                    ModelScale = Vec3.Lerp(Vec3.One, new(1.4f, 1.4f, .6f), t);
-                    stateMachine.CallEvent(Events.Land);
-
-                    if (!Game.Instance.IsMidTransition && !InBubble)
+                    for (int i = 0; i < 16; i++)
                     {
-                        Audio.Play(Sfx.sfx_land, Position);
-
-                        for (int i = 0; i < 16; i++)
-                        {
-                            var angle = Calc.AngleToVector((i / 16.0f) * MathF.Tau);
-                            var at = Position + new Vec3(angle, 0) * 4;
-                            var vel = (tPlatformVelocityStorage > 0 ? platformVelocity : Vec3.Zero) + new Vec3(angle, 0) * 50;
-                            World.Request<Dust>().Init(at, vel);
-                        }
+                        var angle = Calc.AngleToVector((i / 16.0f) * MathF.Tau);
+                        var at = Position + new Vec3(angle, 0) * 4;
+                        var vel = (tPlatformVelocityStorage > 0 ? platformVelocity : Vec3.Zero) + new Vec3(angle, 0) * 50;
+                        World.Request<Dust>().Init(at, vel);
                     }
                 }
             }
         }
 
 
+        LateUpdateCamera();
+
+        // update model
+        {
+            Calc.Approach(ref ModelScale.X, 1, Time.Delta / .8f);
+            Calc.Approach(ref ModelScale.Y, 1, Time.Delta / .8f);
+            Calc.Approach(ref ModelScale.Z, 1, Time.Delta / .8f);
+
+            Facing = Calc.AngleToVector(Calc.AngleApproach(Facing.Angle(), targetFacing.Angle(), MathF.Tau * 2 * Time.Delta));
+
+            Model.Update();
+            Model.Transform = Matrix.CreateScale(ModelScale * 3);
+
+            if (stateMachine.State != States.Feather && stateMachine.State != States.FeatherStart)
+            {
+                Color color;
+                if (tDashResetFlash > 0)
+                    color = CRefillFlash;
+                else if (dashes == 1)
+                    color = CNormal;
+                else if (dashes == 0)
+                    color = CNoDash;
+                else
+                    color = CTwoDashes;
+
+                SetHairColor(color);
+            }
+        }
+
+        // hair
+        {
+            var hairMatrix = Matrix.Identity;
+
+            foreach (var it in Model.Instance.Armature.LogicalNodes)
+            {
+                if (it.Name == "Head")
+                {
+                    hairMatrix = it.ModelMatrix * SkinnedModel.BaseTranslation * Model.Transform * Matrix;
+                }
+            }
+
+            Hair.Flags = Model.Flags;
+            Hair.Forward = -new Vec3(Facing, 0);
+            Hair.Squish = ModelScale;
+            Hair.Materials[0].Effects = 0;
+            Hair.Grounded = onGround;
+            Hair.Update(hairMatrix);
+        }
+
+        // trails
+        for (int i = trails.Count - 1; i >= 0; i--)
+        {
+            if (trails[i].Percent < 1)
+                trails[i].Percent += Time.Delta / 0.5f;
+        }
+    }
+
+    public void UpdateCamera()
+    {
+        if (Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free)
+        {
+            // Freecam rotation
+            if (Input.Mouse.Down(MouseButtons.Left))
+            {
+                //if the mouse moves too much, it means, the Game reset the mouse somewhere
+                //the camera would behave weirdly, if this was not there
+                //TODO: find a way to limit Mouse Movement on Load?
+                if (Manager.MouseDelta.LengthSquared() > 10000) return;
+                Manager.FreecamRotation.X += Manager.MouseDelta.X * Time.Delta * Manager.FreecamRotateSpeed;
+                Manager.FreecamRotation.Y += Manager.MouseDelta.Y * Time.Delta * Manager.FreecamRotateSpeed;
+                Manager.FreecamRotation.X %= 360.0f * Calc.DegToRad;
+                Manager.FreecamRotation.Y = Math.Clamp(Manager.FreecamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
+            }
+
+            // Freecam zoom
+            Manager.FreecamDistance -= Input.Mouse.Wheel.Y * Manager.FreecamZoomSpeed;
+        }
+
+        if (Save.Instance.Freecam == Save.FreecamMode.Free)
+        {
+            // Freecam movement
+            var cameraForward = new Vec2(
+                MathF.Sin(Manager.FreecamRotation.X),
+                MathF.Cos(Manager.FreecamRotation.X));
+            var cameraRight = new Vec2(
+                MathF.Sin(Manager.FreecamRotation.X - Calc.HalfPI),
+                MathF.Cos(Manager.FreecamRotation.X - Calc.HalfPI));
+
+            Manager.FreecamPosition.X -= TASControls.FreecamMove.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.Y -= TASControls.FreecamMove.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.X -= TASControls.FreecamMove.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
+            Manager.FreecamPosition.Y -= TASControls.FreecamMove.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
+
+            if (Input.Keyboard.Down(Keys.Space))
+                Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
+            if (Input.Keyboard.Down(Keys.LeftControl))
+                Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
+        }
+
+        App.MouseVisible = !(Input.Mouse.Down(MouseButtons.Left) &&
+                             Save.Instance.Freecam is Save.FreecamMode.Orbit or Save.FreecamMode.Free);
+
+
+        // only update camera if not dead and not in freecam
+        if (stateMachine.State != States.Respawn && stateMachine.State != States.Dead &&
+            stateMachine.State != States.StrawbReveal && stateMachine.State != States.Cassette)
+        {
+            // Rotate Camera
+            {
+                var invertX = Save.Instance.InvertCamera == Save.InvertCameraOptions.X || Save.Instance.InvertCamera == Save.InvertCameraOptions.Both;
+                var rot = new Vec2(cameraTargetForward.X, cameraTargetForward.Y).Angle();
+                rot -= Controls.Camera.Value.X * Time.Delta * 4 * (invertX ? -1 : 1);
+
+                var angle = Calc.AngleToVector(rot);
+                cameraTargetForward = new(angle, 0);
+            }
+
+            // Move Camera in / out
+            if (Controls.Camera.Value.Y != 0)
+            {
+                var invertY = Save.Instance.InvertCamera == Save.InvertCameraOptions.Y || Save.Instance.InvertCamera == Save.InvertCameraOptions.Both;
+                cameraTargetDistance += Controls.Camera.Value.Y * Time.Delta * (invertY ? -1 : 1);
+                cameraTargetDistance = Calc.Clamp(cameraTargetDistance, 0, 1);
+            }
+            else
+            {
+                const float interval = 1f / 3;
+                const float threshold = .1f;
+                if (cameraTargetDistance % interval < threshold || cameraTargetDistance % interval > interval - threshold)
+                    Calc.Approach(ref cameraTargetDistance, Calc.Snap(cameraTargetDistance, interval), Time.Delta / 2);
+            }
+        }
+    }
+
+    public void LateUpdateCamera()
+    {
         if (Save.Instance.Freecam == Save.FreecamMode.Free)
         {
             var forward = new Vec3(
@@ -569,60 +627,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
                 World.Camera.FOVMultiplier = Calc.Approach(World.Camera.FOVMultiplier, targetFOV, Time.Delta / 4);
             }
-        }
-
-        // update model
-        {
-            Calc.Approach(ref ModelScale.X, 1, Time.Delta / .8f);
-            Calc.Approach(ref ModelScale.Y, 1, Time.Delta / .8f);
-            Calc.Approach(ref ModelScale.Z, 1, Time.Delta / .8f);
-
-            Facing = Calc.AngleToVector(Calc.AngleApproach(Facing.Angle(), targetFacing.Angle(), MathF.Tau * 2 * Time.Delta));
-
-            Model.Update();
-            Model.Transform = Matrix.CreateScale(ModelScale * 3);
-
-            if (stateMachine.State != States.Feather && stateMachine.State != States.FeatherStart)
-            {
-                Color color;
-                if (tDashResetFlash > 0)
-                    color = CRefillFlash;
-                else if (dashes == 1)
-                    color = CNormal;
-                else if (dashes == 0)
-                    color = CNoDash;
-                else
-                    color = CTwoDashes;
-
-                SetHairColor(color);
-            }
-        }
-
-        // hair
-        {
-            var hairMatrix = Matrix.Identity;
-
-            foreach (var it in Model.Instance.Armature.LogicalNodes)
-            {
-                if (it.Name == "Head")
-                {
-                    hairMatrix = it.ModelMatrix * SkinnedModel.BaseTranslation * Model.Transform * Matrix;
-                }
-            }
-
-            Hair.Flags = Model.Flags;
-            Hair.Forward = -new Vec3(Facing, 0);
-            Hair.Squish = ModelScale;
-            Hair.Materials[0].Effects = 0;
-            Hair.Grounded = onGround;
-            Hair.Update(hairMatrix);
-        }
-
-        // trails
-        for (int i = trails.Count - 1; i >= 0; i--)
-        {
-            if (trails[i].Percent < 1)
-                trails[i].Percent += Time.Delta / 0.5f;
         }
     }
 
