@@ -137,7 +137,26 @@ public class Game : Module
 	public override void Update()
 	{
         // NOTE: Everything else is handled inside the TASMod hooks
-        if (Manager.IsPaused()) return;
+        if (Manager.IsPaused())
+        {
+            // update top scene
+            if (scenes.TryPeek(out var wscene)) {
+                if (wscene is World world)
+                {
+                    var pausing =
+                        transitionStep == TransitionStep.FadeIn && transition.FromPause ||
+                        transitionStep == TransitionStep.FadeOut && transition.ToPause;
+                    var player = world.Get<Player>();
+                    if (player!=null && !pausing)
+                    {
+                        player.Update();
+                        player.LateUpdate();
+                    }
+
+                }
+            }
+            return;
+        }
 
         // update top scene
         if (scenes.TryPeek(out var scene))
