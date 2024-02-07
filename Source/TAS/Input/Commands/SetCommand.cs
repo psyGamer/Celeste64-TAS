@@ -186,7 +186,7 @@ public static class SetCommand
                     "Z" => actor.Position with { Z = value },
                     _ => actor.Position
                 };
-                break;
+                return true;
             }
             case "XY" or "XZ" or "YZ" when values.Length == 2:
             {
@@ -199,7 +199,7 @@ public static class SetCommand
                     "YZ" => actor.Position with { Y = value1, Z = value2 },
                     _ => actor.Position
                 };
-                break;
+                return true;
             }
             case "XYZ" when values.Length == 3:
             {
@@ -207,65 +207,70 @@ public static class SetCommand
                 if (!float.TryParse(values[1], out float value2)) return false;
                 if (!float.TryParse(values[2], out float value3)) return false;
                 actor.Position = new Vec3(value1, value2, value3);
-                break;
+                return true;
             }
             }
         }
-        // else if (obj is Vec3 vec)
-        // {
-        //     switch (lastMemberName)
-        //     {
-        //     case "X" or "Y" or "Z" when values.Length == 1:
-        //     {
-        //         if (!float.TryParse(values[0], out float value)) return false;
-        //         switch (lastMemberName)
-        //         {
-        //         case "X":
-        //             vec.X = value;
-        //             break;
-        //         case "Y":
-        //             vec.Y = value;
-        //             break;
-        //         case "Z":
-        //             vec.Y = value;
-        //             break;
-        //         }
-        //         break;
-        //     }
-        //     case "XY" or "XZ" or "YZ" when values.Length == 2:
-        //     {
-        //         if (!float.TryParse(values[0], out float value1)) return false;
-        //         if (!float.TryParse(values[1], out float value2)) return false;
-        //         switch (lastMemberName)
-        //         {
-        //         case "XY":
-        //             vec.X = value1;
-        //             vec.Y = value2;
-        //             break;
-        //         case "XZ":
-        //             vec.X = value1;
-        //             vec.Z = value2;
-        //             break;
-        //         case "Y":
-        //             vec.Y = value1;
-        //             vec.Z = value2;
-        //             break;
-        //         }
-        //         break;
-        //     }
-        //     case "XYZ" when values.Length == 3:
-        //     {
-        //         if (!float.TryParse(values[0], out float value1)) return false;
-        //         if (!float.TryParse(values[1], out float value2)) return false;
-        //         if (!float.TryParse(values[2], out float value3)) return false;
-        //         vec.X = value1;
-        //         vec.Y = value2;
-        //         vec.Z = value3;
-        //         break;
-        //     }
-        //     }
-        // }
-        else if (objType.GetPropertyInfo(lastMemberName) is { } property && property.GetSetMethod(true) is { } setMethod)
+        else if (obj is Vec3)
+        {
+            var f_X = typeof(Vec3).GetField(nameof(Vec3.X))!;
+            var f_Y = typeof(Vec3).GetField(nameof(Vec3.Y))!;
+            var f_Z = typeof(Vec3).GetField(nameof(Vec3.Z))!;
+
+            switch (lastMemberName)
+            {
+            case "X" or "Y" or "Z" when values.Length == 1:
+            {
+                if (!float.TryParse(values[0], out float value)) return false;
+                switch (lastMemberName)
+                {
+                case "X":
+                    f_X.SetValue(obj, value);
+                    break;
+                case "Y":
+                    f_Y.SetValue(obj, value);
+                    break;
+                case "Z":
+                    f_Z.SetValue(obj, value);
+                    break;
+                }
+                return true;
+            }
+            case "XY" or "XZ" or "YZ" when values.Length == 2:
+            {
+                if (!float.TryParse(values[0], out float value1)) return false;
+                if (!float.TryParse(values[1], out float value2)) return false;
+                switch (lastMemberName)
+                {
+                case "XY":
+                    f_X.SetValue(obj, value1);
+                    f_Y.SetValue(obj, value2);
+                    break;
+                    case "XZ":
+                    f_X.SetValue(obj, value1);
+                    f_Z.SetValue(obj, value2);
+                    break;
+                    case "YZ":
+                    f_Y.SetValue(obj, value1);
+                    f_Z.SetValue(obj, value2);
+                        break;
+                }
+                return true;
+            }
+            case "XYZ" when values.Length == 3:
+            {
+                if (!float.TryParse(values[0], out float value1)) return false;
+                if (!float.TryParse(values[1], out float value2)) return false;
+                if (!float.TryParse(values[2], out float value3)) return false;
+                f_X.SetValue(obj, value1);
+                f_Y.SetValue(obj, value2);
+                f_Z.SetValue(obj, value3);
+                return true;
+            }
+            }
+        }
+
+        if (objType.GetPropertyInfo(lastMemberName) is { } property && property.GetSetMethod(true) is { } setMethod)
         {
             object? value = structObj ?? ConvertType(values, property.PropertyType);
             if (property.PropertyType.IsStructType() && Nullable.GetUnderlyingType(property.PropertyType) == null && value == null)
