@@ -27,13 +27,15 @@ public static class Manager
 
     internal static Save.LevelRecord TASLevelRecord = new();
 
-    public static Vec3 FreeCamPosition;
-    public static Vec2 FreeCamRotation;
-    public static float FreeCamDistance = 50f;
+    public const float FreecamRotateSpeed = 0.5f;
+    public const float FreecamZoomSpeed = 5.0f;
+    public const float FreecamMoveSpeed = 3.0f;
 
-    public static Vec2 nextMousePosition;
-    public static Vec2 prevMousePosition;
-    public static Vec2 MouseDelta => Foster.Framework.Input.Mouse.Position - prevMousePosition;
+    public static Vec3 FreecamPosition;
+    public static Vec2 FreecamRotation;
+    public static float FreecamDistance = 50f;
+
+    public static Vec2 MouseDelta => Foster.Framework.Input.Mouse.Position - Foster.Framework.Input.LastState.Mouse.Position;
 
     static Manager()
     {

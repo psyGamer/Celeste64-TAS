@@ -316,9 +316,6 @@ public class World : Scene
             Log.Info($"Reloaded {x} shaders in {a} actors");
         }
 
-        Manager.prevMousePosition = Manager.nextMousePosition;
-        Manager.nextMousePosition = Input.Mouse.Position;
-
         // update audio
         Audio.SetListener(Camera);
 

@@ -69,10 +69,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
     private const float FeatherExitXYMult = .5f;
     private const float FeatherExitZSpeed = 60;
 
-    public const float FreecamRotateSpeed = 0.5f;
-    public const float FreecamZoomSpeed = 5.0f;
-    public const float FreecamMoveSpeed = 3.0f;
-
     static private readonly Color CNormal = 0xdb2c00;
     static private readonly Color CNoDash = 0x6ec0ff;
     static private readonly Color CTwoDashes = 0xfa91ff;
@@ -274,7 +270,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
         if (Save.Instance.Freecam != Save.FreecamMode.Free)
         {
-            Manager.FreeCamPosition = Position;
+            Manager.FreecamPosition = Position;
         }
     }
 
@@ -289,50 +285,50 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
                 //the camera would behave weirdly, if this was not there
                 //TODO: find a way to limit Mouse Movement on Load?
                 if (Manager.MouseDelta.LengthSquared() > 10000) return;
-                Manager.FreeCamRotation.X += Manager.MouseDelta.X * Time.Delta * FreecamRotateSpeed;
-                Manager.FreeCamRotation.Y += Manager.MouseDelta.Y * Time.Delta * FreecamRotateSpeed;
-                Manager.FreeCamRotation.X %= 360.0f * Calc.DegToRad;
-                Manager.FreeCamRotation.Y = Math.Clamp(Manager.FreeCamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
+                Manager.FreecamRotation.X += Manager.MouseDelta.X * Time.Delta * Manager.FreecamRotateSpeed;
+                Manager.FreecamRotation.Y += Manager.MouseDelta.Y * Time.Delta * Manager.FreecamRotateSpeed;
+                Manager.FreecamRotation.X %= 360.0f * Calc.DegToRad;
+                Manager.FreecamRotation.Y = Math.Clamp(Manager.FreecamRotation.Y, -89.9f * Calc.DegToRad, 89.9f * Calc.DegToRad);
             }
 
             // Freecam zoom
-            Manager.FreeCamDistance -= Input.Mouse.Wheel.Y * FreecamZoomSpeed;
+            Manager.FreecamDistance -= Input.Mouse.Wheel.Y * Manager.FreecamZoomSpeed;
         }
 
         if (Save.Instance.Freecam == Save.FreecamMode.Free)
         {
             // Freecam movement
             var cameraForward = new Vec2(
-                MathF.Sin(Manager.FreeCamRotation.X),
-                MathF.Cos(Manager.FreeCamRotation.X));
+                MathF.Sin(Manager.FreecamRotation.X),
+                MathF.Cos(Manager.FreecamRotation.X));
             var cameraRight = new Vec2(
-                MathF.Sin(Manager.FreeCamRotation.X - Calc.HalfPI),
-                MathF.Cos(Manager.FreeCamRotation.X - Calc.HalfPI));
+                MathF.Sin(Manager.FreecamRotation.X - Calc.HalfPI),
+                MathF.Cos(Manager.FreecamRotation.X - Calc.HalfPI));
 
             // if not currently in TAS, proceed with normal movement
             if (!Manager.Running)
             {
-                Manager.FreeCamPosition.X -= Controls.Move.Value.Y * cameraForward.X * FreecamMoveSpeed;
-                Manager.FreeCamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * FreecamMoveSpeed;
-                Manager.FreeCamPosition.X -= Controls.Move.Value.X * cameraRight.X * FreecamMoveSpeed;
-                Manager.FreeCamPosition.Y -= Controls.Move.Value.X * cameraRight.Y * FreecamMoveSpeed;
+                Manager.FreecamPosition.X -= Controls.Move.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
+                Manager.FreecamPosition.Y -= Controls.Move.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
+                Manager.FreecamPosition.X -= Controls.Move.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
+                Manager.FreecamPosition.Y -= Controls.Move.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
 
                 if (Input.Keyboard.Down(Keys.Space))
-                    Manager.FreeCamPosition.Z += FreecamMoveSpeed;
+                    Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
                 if (Input.Keyboard.Down(Keys.LeftControl))
-                    Manager.FreeCamPosition.Z -= FreecamMoveSpeed;
+                    Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
             }
             else
             {
-                Manager.FreeCamPosition.X -= TASControls.FreeCamMove.Value.Y * cameraForward.X * FreecamMoveSpeed;
-                Manager.FreeCamPosition.Y -= TASControls.FreeCamMove.Value.Y * cameraForward.Y * FreecamMoveSpeed;
-                Manager.FreeCamPosition.X -= TASControls.FreeCamMove.Value.X * cameraRight.X * FreecamMoveSpeed;
-                Manager.FreeCamPosition.Y -= TASControls.FreeCamMove.Value.X * cameraRight.Y * FreecamMoveSpeed;
+                Manager.FreecamPosition.X -= TASControls.FreeCamMove.Value.Y * cameraForward.X * Manager.FreecamMoveSpeed;
+                Manager.FreecamPosition.Y -= TASControls.FreeCamMove.Value.Y * cameraForward.Y * Manager.FreecamMoveSpeed;
+                Manager.FreecamPosition.X -= TASControls.FreeCamMove.Value.X * cameraRight.X * Manager.FreecamMoveSpeed;
+                Manager.FreecamPosition.Y -= TASControls.FreeCamMove.Value.X * cameraRight.Y * Manager.FreecamMoveSpeed;
 
                 if (Input.Keyboard.Down(Keys.Space))
-                    Manager.FreeCamPosition.Z += FreecamMoveSpeed;
+                    Manager.FreecamPosition.Z += Manager.FreecamMoveSpeed;
                 if (Input.Keyboard.Down(Keys.LeftControl))
-                    Manager.FreeCamPosition.Z -= FreecamMoveSpeed;
+                    Manager.FreecamPosition.Z -= Manager.FreecamMoveSpeed;
             }
         }
 
@@ -531,20 +527,20 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         if (Save.Instance.Freecam == Save.FreecamMode.Free)
         {
             var forward = new Vec3(
-                MathF.Sin(Manager.FreeCamRotation.X) * MathF.Cos(Manager.FreeCamRotation.Y),
-                MathF.Cos(Manager.FreeCamRotation.X) * MathF.Cos(Manager.FreeCamRotation.Y),
-                MathF.Sin(-Manager.FreeCamRotation.Y));
-            World.Camera.Position = Manager.FreeCamPosition;
-            World.Camera.LookAt = Manager.FreeCamPosition + forward;
+                MathF.Sin(Manager.FreecamRotation.X) * MathF.Cos(Manager.FreecamRotation.Y),
+                MathF.Cos(Manager.FreecamRotation.X) * MathF.Cos(Manager.FreecamRotation.Y),
+                MathF.Sin(-Manager.FreecamRotation.Y));
+            World.Camera.Position = Manager.FreecamPosition;
+            World.Camera.LookAt = Manager.FreecamPosition + forward;
         }
         else if (Save.Instance.Freecam == Save.FreecamMode.Orbit)
         {
             var forward = new Vec3(
-                MathF.Sin(Manager.FreeCamRotation.X) * MathF.Cos(Manager.FreeCamRotation.Y),
-                MathF.Cos(Manager.FreeCamRotation.X) * MathF.Cos(Manager.FreeCamRotation.Y),
-                MathF.Sin(-Manager.FreeCamRotation.Y));
+                MathF.Sin(Manager.FreecamRotation.X) * MathF.Cos(Manager.FreecamRotation.Y),
+                MathF.Cos(Manager.FreecamRotation.X) * MathF.Cos(Manager.FreecamRotation.Y),
+                MathF.Sin(-Manager.FreecamRotation.Y));
             World.Camera.LookAt = Position;
-            World.Camera.Position = Position - forward * Math.Max(10.0f, Manager.FreeCamDistance);
+            World.Camera.Position = Position - forward * Math.Max(10.0f, Manager.FreecamDistance);
         }
         else
         {
