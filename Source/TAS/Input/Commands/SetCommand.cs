@@ -36,8 +36,9 @@ public static class SetCommand
 
     private const string LogPrefix = "Set Command Failed: ";
 
+    // Set, World.Field, Value
     // Set, Actor.Field, Value
-    // Set, Class.Static.Instance, Value
+    // Set, Type.Static.Instance, Value
     [Command("Set", LegalInFullGame = false)]
     private static void Set(string[] args)
     {
@@ -385,7 +386,7 @@ public static class SetCommand
         }
     }
 
-    private static object? ConvertType(string[] values, Type type)
+    internal static object? ConvertType(string[] values, Type type)
     {
         Type nullableType = type;
         type = Nullable.GetUnderlyingType(type) ?? type;
