@@ -2340,6 +2340,16 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         }
 
         batch.Cube(Position, Color.Green, thickness: 0.2f);
+
+        // Direction lines
+        const float LineLength = 10.0f;
+        var lineOrigin = Position + Vec3.UnitZ * 5.0f;
+        // Facing
+        batch.Line(lineOrigin, lineOrigin + new Vec3(Facing * LineLength, 0.0f), Color.CornflowerBlue);
+        // Input
+        batch.Line(lineOrigin, lineOrigin + new Vec3(RelativeMoveInput * LineLength, 0.0f), Color.LightGray);
+        // Velocity (purple)
+        batch.Line(lineOrigin, lineOrigin + Velocity.Normalized() * LineLength, new Color(0xFF00FF));
     }
 
     #endregion
