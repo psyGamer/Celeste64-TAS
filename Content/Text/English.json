@@ -23,8 +23,12 @@
 		"OptionsTimer": "Timer",
 		"OptionsBGM": "BGM",
 		"OptionsSFX": "SFX",
-		"OptionsInvertCamera": "Inverted Camera"
-	},
+		"OptionsInvertCamera": "Inverted Camera",
+
+        "TAS_PauseOptions": "TAS Options",
+        "TAS_OptionsTitle": "TAS Options",
+        "TAS_SimplifiedGraphics": "Simplified Graphics"
+    },
 	"Dialog":
 	{
 		"Granny1": [

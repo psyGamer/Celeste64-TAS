@@ -27,6 +27,16 @@ public static class Manager
 
     internal static Save.LevelRecord TASLevelRecord = new();
 
+    public const float FreecamRotateSpeed = 0.5f;
+    public const float FreecamZoomSpeed = 5.0f;
+    public const float FreecamMoveSpeed = 3.0f;
+
+    public static Vec3 FreecamPosition;
+    public static Vec2 FreecamRotation;
+    public static float FreecamDistance = 50f;
+
+    public static Vec2 MouseDelta => Foster.Framework.Input.Mouse.Position - Foster.Framework.Input.LastState.Mouse.Position;
+
     static Manager()
     {
         AttributeUtils.CollectMethods<EnableRunAttribute>();
@@ -94,6 +104,7 @@ public static class Manager
                 NextState = State.Running;
             else if (TASControls.SlowForward.Down || TASControls.FrameAdvance.ConsumePress() || TASControls.FrameAdvance.Repeated)
                 NextState = State.FrameAdvance;
+
             break;
         case State.Disabled:
         default:
