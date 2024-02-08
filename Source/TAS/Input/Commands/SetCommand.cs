@@ -60,7 +60,12 @@ public static class SetCommand
                     Values = parameters
                 };
 
-                // FindObject(type, memberNames, parameters, out var obj);
+                if (info.MemberNames.IsEmpty() || info.Values.IsEmpty() && info.StructObj == null)
+                {
+                    Log.Warning($"{LogPrefix}No member names or values specified");
+                    return;
+                }
+
                 FindObject(ref info);
                 SetObjectMember(info);
             }
@@ -78,11 +83,6 @@ public static class SetCommand
     // internal static bool FindObject(Type? type, string[] memberNames, string[] values, out ObjectInfo info, object? structObj = null)
     internal static bool FindObject(ref ObjectInfo info)
     {
-        if (info.MemberNames.IsEmpty() || info.Values.IsEmpty() && info.StructObj == null)
-        {
-            return false;
-        }
-
         info.LastMemberName = info.MemberNames[^1];
         info.MemberNames = info.MemberNames[..^1];
 
