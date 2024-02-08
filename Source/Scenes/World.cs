@@ -7,6 +7,8 @@ namespace Celeste64;
 
 public class World : Scene
 {
+    public const int CameraFarPlane = 800; // Added by TAS
+
     public enum EntryReasons { Entered, Returned, Respawned }
 
     public readonly record struct EntryInfo(string Map, string CheckPoint, bool Submap, EntryReasons Reason);
@@ -66,6 +68,8 @@ public class World : Scene
     private int debugUpdateCount;
     public static bool DebugDraw { get; private set; } = false;
 
+    private bool appliedShader = false; // Added by TAS
+
     public World(EntryInfo entry)
     {
         Entry = entry;
@@ -74,7 +78,7 @@ public class World : Scene
         var map = Assets.Maps[entry.Map];
 
         Camera.NearPlane = 20;
-        Camera.FarPlane = 800;
+        Camera.FarPlane = Save.Instance.SimplifiedGraphics ? CameraFarPlane * 10 : CameraFarPlane;
         Camera.FOVMultiplier = 1;
 
         strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
@@ -892,6 +896,28 @@ public class World : Scene
 
             batch.Render(Camera.Target);
             batch.Clear();
+        }
+
+        if (!appliedShader && Save.Instance.SimplifiedGraphics)
+        {
+            appliedShader = true;
+
+            // Set "simplified" flag in shader
+            foreach (var actor in Actors)
+            {
+                var fields = actor.GetType().GetFields()
+                    .Where(f => f.FieldType.IsAssignableTo(typeof(Model)));
+
+                foreach (var field in fields)
+                {
+                    var model = (Model)field.GetValue(actor)!;
+                    foreach (var material in model.Materials)
+                    {
+                        if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
+                        material.Simplified = true;
+                    }
+                }
+            }
         }
 
         lastDebugRndTime = debugRndTimer.Elapsed;

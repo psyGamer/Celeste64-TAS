@@ -159,12 +159,13 @@ public class Save
     public void ToggleSimplifiedGraphics()
     {
         SimplifiedGraphics = !SimplifiedGraphics;
-        Save.Instance.SyncSettings();
+        SyncSettings();
 
         if (Game.Scene is World world)
         {
-            world.Camera.FarPlane = Save.Instance.SimplifiedGraphics ? 8000 : 800;
+            world.Camera.FarPlane = SimplifiedGraphics ? World.CameraFarPlane * 10 : World.CameraFarPlane;
 
+            // Update "simplified" flag in shader
             foreach (var actor in world.Actors)
             {
                 var fields = actor.GetType().GetFields()
@@ -176,7 +177,7 @@ public class Save
                     foreach (var material in model.Materials)
                     {
                         if (material.Shader == null || !Assets.Shaders.ContainsKey(material.Shader.Name)) continue;
-                        material.Simplified = Save.Instance.SimplifiedGraphics;
+                        material.Simplified = SimplifiedGraphics;
                     }
                 }
             }
