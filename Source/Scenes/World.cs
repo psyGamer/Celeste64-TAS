@@ -78,7 +78,7 @@ public class World : Scene
         var map = Assets.Maps[entry.Map];
 
         Camera.NearPlane = 20;
-        Camera.FarPlane = Save.Instance.SimplifiedGraphics ? CameraFarPlane * 10 : CameraFarPlane;
+        Camera.FarPlane = Save.Instance.SimplifiedGraphics ? CameraFarPlane * Save.Instance.SimplifiedRenderDistance : CameraFarPlane;
         Camera.FOVMultiplier = 1;
 
         strawbCounterWas = Save.CurrentRecord.Strawberries.Count;
@@ -99,6 +99,7 @@ public class World : Scene
             Menu tasMenu = new();
             tasMenu.Title = Loc.Str("TAS_OptionsTitle");
             tasMenu.Add(new Menu.Toggle(Loc.Str("TAS_SimplifiedGraphics"), Save.Instance.ToggleSimplifiedGraphics, () => Save.Instance.SimplifiedGraphics));
+            tasMenu.Add(new Menu.Slider(Loc.Str("TAS_SimplifiedRenderDistance"), 1, 10,() => Save.Instance.SimplifiedRenderDistance, Save.Instance.SetSimplifiedRenderDistance));
 
             pauseMenu.Title = Loc.Str("PauseTitle");
             pauseMenu.Add(new Menu.Option(Loc.Str("PauseResume"), () => SetPaused(false)));

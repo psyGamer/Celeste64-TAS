@@ -27,7 +27,8 @@
 
         "TAS_PauseOptions": "TAS Options",
         "TAS_OptionsTitle": "TAS Options",
-        "TAS_SimplifiedGraphics": "Simplified Graphics"
+        "TAS_SimplifiedGraphics": "Simplified Graphics",
+        "TAS_SimplifiedRenderDistance": "Simplified Graphics - Render Distance Multiplier"
     },
 	"Dialog":
 	{

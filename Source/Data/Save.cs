@@ -99,6 +99,7 @@ public class Save
     // TAS Settings
     public FreecamMode Freecam { get; set; } = FreecamMode.Disabled;
     public bool SimplifiedGraphics { get; set; } = false;
+    public int SimplifiedRenderDistance { get; set; } = 10;
     public bool Hitboxes { get; set; } = false;
 
     public bool InvisiblePlayer { get; set; } = false;
@@ -163,7 +164,7 @@ public class Save
 
         if (Game.Scene is World world)
         {
-            world.Camera.FarPlane = SimplifiedGraphics ? World.CameraFarPlane * 10 : World.CameraFarPlane;
+            world.Camera.FarPlane = SimplifiedGraphics ? World.CameraFarPlane * SimplifiedRenderDistance : World.CameraFarPlane;
 
             // Update "simplified" flag in shader
             foreach (var actor in world.Actors)
@@ -181,6 +182,17 @@ public class Save
                     }
                 }
             }
+        }
+    }
+
+    public void SetSimplifiedRenderDistance(int value)
+    {
+        SimplifiedRenderDistance = Calc.Clamp(value, 1, 10);
+        SyncSettings();
+
+        if (Game.Scene is World world)
+        {
+            world.Camera.FarPlane = SimplifiedGraphics ? World.CameraFarPlane * SimplifiedRenderDistance : World.CameraFarPlane;
         }
     }
 
