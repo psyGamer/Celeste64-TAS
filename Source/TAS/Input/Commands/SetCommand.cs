@@ -6,6 +6,34 @@ namespace Celeste64.TAS.Input.Commands;
 
 public static class SetCommand
 {
+    internal struct ObjectInfo()
+    {
+        public required Type Type;
+        public required string[] MemberNames = [];
+        public required string[] Values = [];
+
+        internal object? Obj = null;
+        internal Type ObjType;
+
+        internal object? StructObj = null;
+        internal string LastMemberName = string.Empty;
+
+        internal ObjectInfo Clone() {
+            return new ObjectInfo
+            {
+                Type = Type,
+                MemberNames = MemberNames,
+                Values = Values,
+
+                Obj = Obj,
+                ObjType = ObjType,
+
+                StructObj = StructObj,
+                LastMemberName = LastMemberName,
+            };
+        }
+    }
+
     private const string LogPrefix = "Set Command Failed: ";
 
     // Set, Actor.Field, Value
@@ -25,7 +53,16 @@ public static class SetCommand
             if (CustomInfo.TryParseMemberNames(args[0], out string? typeText, out string[]? memberNames, out string errorMessage)
              && CustomInfo.TryParseType(typeText, out Type? type, out errorMessage))
             {
-                FindObjectAndSetMember(type, memberNames, parameters);
+                ObjectInfo info = new()
+                {
+                    Type = type,
+                    MemberNames = memberNames,
+                    Values = parameters
+                };
+
+                // FindObject(type, memberNames, parameters, out var obj);
+                FindObject(ref info);
+                SetObjectMember(info);
             }
             else
             {
@@ -38,33 +75,31 @@ public static class SetCommand
         }
     }
 
-    private static bool FindObjectAndSetMember(Type type, string[] memberNames, string[] values, object? structObj = null)
+    // internal static bool FindObject(Type? type, string[] memberNames, string[] values, out ObjectInfo info, object? structObj = null)
+    internal static bool FindObject(ref ObjectInfo info)
     {
-        if (memberNames.IsEmpty() || values.IsEmpty() && structObj == null)
+        if (info.MemberNames.IsEmpty() || info.Values.IsEmpty() && info.StructObj == null)
         {
             return false;
         }
 
-        string lastMemberName = memberNames.Last();
-        memberNames = memberNames[..^1];
+        info.LastMemberName = info.MemberNames[^1];
+        info.MemberNames = info.MemberNames[..^1];
 
-        Type objType;
-        object? obj = null;
-
-        if (memberNames.IsEmpty() &&
-            (type.GetGetMethod(lastMemberName) is { IsStatic: true } ||
-             type.GetFieldInfo(lastMemberName) is { IsStatic: true }))
+        if (info.MemberNames.IsEmpty() &&
+            (info.Type.GetGetMethod(info.LastMemberName) is { IsStatic: true } ||
+             info.Type.GetFieldInfo(info.LastMemberName) is { IsStatic: true }))
         {
-            objType = type;
+            info.ObjType = info.Type;
         }
-        else if (memberNames.IsNotEmpty() &&
-                 (type.GetGetMethod(memberNames.First()) is { IsStatic: true } ||
-                  type.GetFieldInfo(memberNames.First()) is { IsStatic: true }))
+        else if (info.MemberNames.IsNotEmpty() &&
+                 (info.Type.GetGetMethod(info.MemberNames.First()) is { IsStatic: true } ||
+                  info.Type.GetFieldInfo(info.MemberNames.First()) is { IsStatic: true }))
         {
-            obj = CustomInfo.GetMemberValue(type, null, memberNames, out string? errorMessage);
-            if (obj == null)
+            info.Obj = CustomInfo.GetMemberValue(info.Type, null, info.MemberNames, out string? errorMessage);
+            if (info.Obj == null)
             {
-                Log.Warning($"{LogPrefix}{type.FullName} member value is null");
+                Log.Warning($"{LogPrefix}{info.Type.FullName} member value is null");
                 return false;
             }
 
@@ -74,29 +109,29 @@ public static class SetCommand
                 return false;
             }
 
-            objType = obj.GetType();
+            info.ObjType = info.Obj.GetType();
         }
         else
         {
-            obj = FindSpecialObject(type);
-            if (obj == null)
+            info.Obj = FindSpecialObject(info.Type);
+            if (info.Obj == null)
             {
-                Log.Warning($"{LogPrefix}{type.FullName} object is not found");
+                Log.Warning($"{LogPrefix}{info.Type.FullName} object is not found");
                 return false;
             }
 
-            if (type.IsSameOrSubclassOf(typeof(Actor)) && obj is List<Actor> actors)
+            if (info.Type.IsSameOrSubclassOf(typeof(Actor)) && info.Obj is List<Actor> actors)
             {
                 if (actors.IsEmpty())
                 {
-                    Log.Warning($"{LogPrefix}{type.FullName} actor is not found");
+                    Log.Warning($"{LogPrefix}{info.Type.FullName} actor is not found");
                     return false;
                 }
 
-                List<object> memberValues = new();
+                List<object> memberValues = [];
                 foreach (var actor in actors)
                 {
-                    object? memberValue = CustomInfo.GetMemberValue(type, actor, memberNames, out string? errorMessage);
+                    object? memberValue = CustomInfo.GetMemberValue(info.Type, actor, info.MemberNames, out string? errorMessage);
                     if (errorMessage != null)
                     {
                         Log.Warning($"{LogPrefix}{errorMessage}");
@@ -114,15 +149,15 @@ public static class SetCommand
                     return false;
                 }
 
-                obj = memberValues;
-                objType = memberValues.First().GetType();
+                info.Obj = memberValues;
+                info.ObjType = memberValues.First().GetType();
             }
             else
             {
-                obj = CustomInfo.GetMemberValue(type, obj, memberNames, out string? errorMessage);
-                if (obj == null)
+                info.Obj = CustomInfo.GetMemberValue(info.Type, info.Obj, info.MemberNames, out string? errorMessage);
+                if (info.Obj == null)
                 {
-                    Log.Warning($"{LogPrefix}{type.FullName} member value is null");
+                    Log.Warning($"{LogPrefix}{info.Type.FullName} member value is null");
                     return false;
                 }
 
@@ -132,54 +167,66 @@ public static class SetCommand
                     return false;
                 }
 
-                objType = obj.GetType();
+                info.ObjType = info.Obj.GetType();
             }
         }
 
-        if (type.IsSameOrSubclassOf(typeof(Actor)) && obj is List<object> objects)
+        return true;
+    }
+
+    private static bool SetObjectMember(ObjectInfo info)
+    {
+        if (info.Type.IsSameOrSubclassOf(typeof(Actor)) && info.Obj is List<object> objects)
         {
             bool success = false;
             objects.ForEach(o => success |= SetMember(o));
             return success;
         }
 
-        return SetMember(obj);
+        return SetMember(info.Obj);
 
         bool SetMember(object? @object)
         {
-            if (!TrySetMember(objType, @object, lastMemberName, values, structObj))
+            if (!TrySetMember(info, @object))
             {
-                Log.Warning($"{LogPrefix}{objType.FullName}.{lastMemberName} member not found");
+                Log.Warning($"{LogPrefix}{info.ObjType.FullName}.{info.LastMemberName} member not found");
                 return false;
             }
 
             // After modifying the struct, we also need to update the object owning the struct
-            if (memberNames.IsNotEmpty() && objType.IsStructType())
+            if (info.MemberNames.IsNotEmpty() && info.ObjType.IsStructType())
             {
-                string[] position = @object switch
+                string[] vecValues = @object switch
                 {
                     Vec2 vec => [vec.X.ToString(CultureInfo.InvariantCulture), vec.Y.ToString(CultureInfo.InvariantCulture)],
                     Vec3 vec => [vec.X.ToString(CultureInfo.InvariantCulture), vec.Y.ToString(CultureInfo.InvariantCulture), vec.Z.ToString(CultureInfo.InvariantCulture)],
                     _ => []
                 };
 
-                return FindObjectAndSetMember(type, memberNames, position, position.IsEmpty() ? @object : null);
+                var newInfo = info.Clone() with
+                {
+                    Values = vecValues,
+                    StructObj = vecValues.IsEmpty() ? @object : null
+                };
+                if (!FindObject(ref newInfo)) return false;
+
+                return SetObjectMember(newInfo);
             }
 
             return true;
         }
     }
 
-    private static bool TrySetMember(Type objType, object? obj, string lastMemberName, string[] values, object? structObj = null)
+    private static bool TrySetMember(ObjectInfo info, object? obj)
     {
         if (obj is Actor actor)
         {
-            switch (lastMemberName)
+            switch (info.LastMemberName)
             {
-            case "X" or "Y" or "Z" when values.Length == 1:
+            case "X" or "Y" or "Z" when info.Values.Length == 1:
             {
-                if (!float.TryParse(values[0], out float value)) return false;
-                actor.Position = lastMemberName switch
+                if (!float.TryParse(info.Values[0], out float value)) return false;
+                actor.Position = info.LastMemberName switch
                 {
                     "X" => actor.Position with { X = value },
                     "Y" => actor.Position with { Y = value },
@@ -188,11 +235,11 @@ public static class SetCommand
                 };
                 return true;
             }
-            case "XY" or "XZ" or "YZ" when values.Length == 2:
+            case "XY" or "XZ" or "YZ" when info.Values.Length == 2:
             {
-                if (!float.TryParse(values[0], out float value1)) return false;
-                if (!float.TryParse(values[1], out float value2)) return false;
-                actor.Position = lastMemberName switch
+                if (!float.TryParse(info.Values[0], out float value1)) return false;
+                if (!float.TryParse(info.Values[1], out float value2)) return false;
+                actor.Position = info.LastMemberName switch
                 {
                     "XY" => actor.Position with { X = value1, Y = value2 },
                     "XZ" => actor.Position with { Y = value1, Z = value2 },
@@ -201,11 +248,11 @@ public static class SetCommand
                 };
                 return true;
             }
-            case "XYZ" when values.Length == 3:
+            case "XYZ" when info.Values.Length == 3:
             {
-                if (!float.TryParse(values[0], out float value1)) return false;
-                if (!float.TryParse(values[1], out float value2)) return false;
-                if (!float.TryParse(values[2], out float value3)) return false;
+                if (!float.TryParse(info.Values[0], out float value1)) return false;
+                if (!float.TryParse(info.Values[1], out float value2)) return false;
+                if (!float.TryParse(info.Values[2], out float value3)) return false;
                 actor.Position = new Vec3(value1, value2, value3);
                 return true;
             }
@@ -217,12 +264,12 @@ public static class SetCommand
             var f_Y = typeof(Vec3).GetField(nameof(Vec3.Y))!;
             var f_Z = typeof(Vec3).GetField(nameof(Vec3.Z))!;
 
-            switch (lastMemberName)
+            switch (info.LastMemberName)
             {
-            case "X" or "Y" or "Z" when values.Length == 1:
+            case "X" or "Y" or "Z" when info.Values.Length == 1:
             {
-                if (!float.TryParse(values[0], out float value)) return false;
-                switch (lastMemberName)
+                if (!float.TryParse(info.Values[0], out float value)) return false;
+                switch (info.LastMemberName)
                 {
                 case "X":
                     f_X.SetValue(obj, value);
@@ -236,11 +283,11 @@ public static class SetCommand
                 }
                 return true;
             }
-            case "XY" or "XZ" or "YZ" when values.Length == 2:
+            case "XY" or "XZ" or "YZ" when info.Values.Length == 2:
             {
-                if (!float.TryParse(values[0], out float value1)) return false;
-                if (!float.TryParse(values[1], out float value2)) return false;
-                switch (lastMemberName)
+                if (!float.TryParse(info.Values[0], out float value1)) return false;
+                if (!float.TryParse(info.Values[1], out float value2)) return false;
+                switch (info.LastMemberName)
                 {
                 case "XY":
                     f_X.SetValue(obj, value1);
@@ -257,11 +304,11 @@ public static class SetCommand
                 }
                 return true;
             }
-            case "XYZ" when values.Length == 3:
+            case "XYZ" when info.Values.Length == 3:
             {
-                if (!float.TryParse(values[0], out float value1)) return false;
-                if (!float.TryParse(values[1], out float value2)) return false;
-                if (!float.TryParse(values[2], out float value3)) return false;
+                if (!float.TryParse(info.Values[0], out float value1)) return false;
+                if (!float.TryParse(info.Values[1], out float value2)) return false;
+                if (!float.TryParse(info.Values[2], out float value3)) return false;
                 f_X.SetValue(obj, value1);
                 f_Y.SetValue(obj, value2);
                 f_Z.SetValue(obj, value3);
@@ -270,9 +317,9 @@ public static class SetCommand
             }
         }
 
-        if (objType.GetPropertyInfo(lastMemberName) is { } property && property.GetSetMethod(true) is { } setMethod)
+        if (info.ObjType.GetPropertyInfo(info.LastMemberName) is { } property && property.GetSetMethod(true) is { } setMethod)
         {
-            object? value = structObj ?? ConvertType(values, property.PropertyType);
+            object? value = info.StructObj ?? ConvertType(info.Values, property.PropertyType);
             if (property.PropertyType.IsStructType() && Nullable.GetUnderlyingType(property.PropertyType) == null && value == null)
             {
                 Log.Warning($"{LogPrefix}{property.PropertyType.FullName} member value is null");
@@ -280,9 +327,9 @@ public static class SetCommand
             }
             setMethod.Invoke(obj, [value]);
         }
-        else if (objType.GetFieldInfo(lastMemberName) is { } field)
+        else if (info.ObjType.GetFieldInfo(info.LastMemberName) is { } field)
         {
-            object? value = structObj ?? ConvertType(values, field.FieldType);
+            object? value = info.StructObj ?? ConvertType(info.Values, field.FieldType);
             if (field.FieldType.IsStructType() && Nullable.GetUnderlyingType(field.FieldType) == null && value == null)
             {
                 Log.Warning($"{LogPrefix}{field.FieldType.FullName} member value is null");
@@ -298,7 +345,7 @@ public static class SetCommand
         return true;
     }
 
-    private static object? FindSpecialObject(Type type)
+    internal static object? FindSpecialObject(Type type)
     {
         if (type.IsSameOrSubclassOf(typeof(Actor)))
         {
@@ -316,7 +363,7 @@ public static class SetCommand
         }
     }
 
-    private static object? Convert(object value, Type type)
+    internal static object? Convert(object? value, Type type)
     {
         try
         {

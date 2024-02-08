@@ -76,7 +76,7 @@ public class CustomInfo
 
             return $"{prefix}{Format(type, memberNames, helperMethod, decimals)}";
 
-            static string Format(Type type, string[] memberNames, string? helperMethod, int decimals)
+            static string Format(Type? type, string[] memberNames, string? helperMethod, int decimals)
             {
                 if (memberNames.IsNotEmpty() && (
                         type.GetGetMethod(memberNames.First()) is { IsStatic: true } ||
@@ -201,7 +201,7 @@ public class CustomInfo
         return true;
     }
 
-    internal static object? GetMemberValue(Type type, object? obj, IEnumerable<string> memberNames, out string? errorMessage)
+    internal static object? GetMemberValue(Type? type, object? obj, IEnumerable<string> memberNames, out string? errorMessage)
     {
         foreach (string memberName in memberNames)
         {
