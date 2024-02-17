@@ -2330,6 +2330,11 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         batch.Disk(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
         batch.Disk(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
 
+        // Climb check
+        batch.Torus(SolidWaistTestPos, ClimbCheckDist, 16, new Color(0xFF00FF));
+        if (Velocity.Z > 0 && !onGround && stateMachine.State != States.Climbing)
+            batch.Torus(SolidWaistTestPos + Vec3.UnitZ * 4, ClimbCheckDist, 16, new Color(0xFF00FF));
+
         // Death/Pickup collision
         batch.Cube(SolidWaistTestPos, Color.Red, thickness: 0.2f);
 
