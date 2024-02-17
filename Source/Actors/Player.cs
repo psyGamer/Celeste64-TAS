@@ -2330,7 +2330,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         batch.Disk(SolidWaistTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
         batch.Disk(SolidHeadTestPos, WallPushoutDist, 16, Color.Yellow * 0.5f);
 
-        // Death collision
+        // Death/Pickup collision
         batch.Cube(SolidWaistTestPos, Color.Red, thickness: 0.2f);
 
         // Pickup colliders
@@ -2338,8 +2338,6 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
         {
             batch.Sphere(actor.Position, (actor as IPickup)!.PickupRadius, 12, Color.Green * 0.5f);
         }
-
-        batch.Cube(Position, Color.Green, thickness: 0.2f);
 
         // Direction lines
         const float LineLength = 10.0f;
