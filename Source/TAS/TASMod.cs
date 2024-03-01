@@ -116,8 +116,8 @@ public class TASMod
         // Don't do anything if TAS isn't running
         if (!Manager.Running)
         {
+            TASMod.Update();
             orig(delta);
-            Update();
             return;
         }
 
@@ -155,16 +155,11 @@ public class TASMod
             orig(delta);
         }
 
-        if (Manager.Running && Manager.Controller.ShouldFastForward)
+        // Fast forward to breakpoint
+        while (Manager.Running && Manager.Controller.ShouldFastForward)
         {
-            // Fast forward to breakpoint
-            while (Manager.Running && Manager.Controller.ShouldFastForward)
-            {
-                TASMod.Update();
-                orig(delta);
-            }
-            // And pause after that
-            Manager.NextState = Manager.State.Paused;
+            TASMod.Update();
+            orig(delta);
         }
     }
 

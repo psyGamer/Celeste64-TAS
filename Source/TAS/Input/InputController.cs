@@ -37,6 +37,8 @@ public class InputController
     public FastForward? CurrentFastForward => FastForwards.FirstOrDefault(pair => pair.Key > CurrentFrameInTas).Value ??
                                               FastForwards.LastOrDefault().Value;
 
+    public bool Break => CurrentFastForward?.Frame == CurrentFrameInTas;
+
     public bool ShouldFastForward => CurrentFastForward is { } forward && forward.Frame > CurrentFrameInTas;
 
     public bool CanPlayback => CurrentFrameInTas < Inputs.Count;
@@ -180,10 +182,6 @@ public class InputController
             // TODO: Is the goto here required?
             string lineText = readLine.Trim();
 
-            // Empty / Comment
-            if (lineText.IsNullOrWhiteSpace() || lineText.StartsWith('#') || blockCommentMode)
-                goto NextLine;
-
             // Block comments
             if (lineText.StartsWith("/*"))
             {
@@ -195,6 +193,10 @@ public class InputController
                 blockCommentMode = false;
                 goto NextLine;
             }
+
+            // Empty / Comment
+            if (lineText.IsNullOrWhiteSpace() || lineText.StartsWith('#') || blockCommentMode)
+                goto NextLine;
 
             if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out var _))
             {
@@ -266,7 +268,7 @@ public class InputController
         // savestateChecksum = string.Empty;
         Inputs.Clear();
         Commands.Clear();
-        // FastForwards.Clear();
+        FastForwards.Clear();
         // FastForwardComments.Clear();
         // Comments.Clear();
         usedFiles.Clear();

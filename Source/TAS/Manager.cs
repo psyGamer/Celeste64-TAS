@@ -47,8 +47,7 @@ public static class Manager
     {
         Log.Info($"Starting TAS: {InputController.TasFilePath}");
 
-        CurrState = State.Running;
-        NextState = State.Running;
+        CurrState = NextState = State.Running;
         AttributeUtils.Invoke<EnableRunAttribute>();
         Controller.Stop();
         Controller.Clear();
@@ -78,6 +77,13 @@ public static class Manager
         if (!IsPaused())
         {
             Controller.AdvanceFrame(out bool canPlayback);
+
+            // Stop TAS if breakpoint is not placed at the end
+            if (Controller.Break && Controller.CanPlayback) {
+                // Controller.NextCommentFastForward = null;
+                NextState = State.Paused;
+                return;
+            }
 
             if (!canPlayback)
             {
@@ -121,6 +127,7 @@ public static class Manager
     public static bool IsLoading()
     {
         return !(Game.Instance.transitionStep == Game.TransitionStep.FadeIn ||
+                 Game.Instance.transitionStep == Game.TransitionStep.Perform ||
                  Game.Instance.transitionStep == Game.TransitionStep.None);
     }
 
