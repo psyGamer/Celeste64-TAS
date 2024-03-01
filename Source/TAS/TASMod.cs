@@ -71,6 +71,12 @@ public class TASMod
                 Manager.EnableRun();
         }
 
+        if (TASControls.Restart.ConsumePress())
+        {
+            Manager.DisableRun();
+            Manager.EnableRun();
+        }
+
         InfoHUD.Update();
     }
 

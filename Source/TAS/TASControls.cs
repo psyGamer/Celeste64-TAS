@@ -38,6 +38,9 @@ public static class TASControls
         StartStop.Clear();
         StartStop.Add(Keys.RightControl);
 
+        Restart.Clear();
+        Restart.Add(Keys.RightBracket);
+
         PauseResume.Clear();
         PauseResume.Add(Keys.P);
 
