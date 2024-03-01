@@ -162,18 +162,35 @@ public class InputController
 
     public void ReadLines(IEnumerable<string> lines, string filePath, int startLine, int studioLine, int repeatIndex, int repeatCount, bool lockStudioLine = false) {
         int subLine = 0;
+        bool blockCommentMode = false; // TODO: Remove this. This is only a temporary solution and **will** be removed later!
         foreach (string readLine in lines) {
             subLine++;
             if (subLine < startLine) {
                 continue;
             }
 
+            // TODO: Is the goto here required?
             string lineText = readLine.Trim();
 
-            if (lineText.StartsWith('#')) continue; // Comment
+            // Empty / Comment
+            if (lineText.IsNullOrWhiteSpace() || lineText.StartsWith('#') || blockCommentMode)
+                goto NextLine;
+
+            // Block comments
+            if (lineText.StartsWith("/*"))
+            {
+                blockCommentMode = true;
+                goto NextLine;
+            }
+            if (lineText.StartsWith("*/"))
+            {
+                blockCommentMode = false;
+                goto NextLine;
+            }
 
             if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out var _))
             {
+                goto NextLine;
             }
             // if (Command.TryParse(this, filePath, subLine, lineText, initializationFrameCount, studioLine, out Command command) &&
             //     command.Is("Play")) {
@@ -201,6 +218,7 @@ public class InputController
                 AddFrames(lineText, studioLine, repeatIndex, repeatCount);
             // }
 
+            NextLine:
             if (filePath == TasFilePath && !lockStudioLine) {
                 studioLine++;
             }
