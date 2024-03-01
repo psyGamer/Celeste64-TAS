@@ -11,7 +11,14 @@ public class LoadCommand
             CheckPoint = args.Length <= 1 ? "Start" : args[1],
             Submap = false, // TODO
             Reason = World.EntryReasons.Entered,
-        } ;
+        };
+
+        // We need to change the current scene to the main menu,
+        // since otherwise an input on the first frame would get consumed by the previous scene.
+        if (Game.Instance.scenes.TryPop(out _))
+        {
+            Game.Instance.scenes.Push(new Overworld(true));
+        }
 
         Game.Instance.Goto(new Transition()
         {
