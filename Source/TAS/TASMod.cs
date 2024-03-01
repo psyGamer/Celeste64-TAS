@@ -148,6 +148,18 @@ public class TASMod
             TASMod.Update();
             orig(delta);
         }
+
+        if (Manager.Running && Manager.Controller.ShouldFastForward)
+        {
+            // Fast forward to breakpoint
+            while (Manager.Running && Manager.Controller.ShouldFastForward)
+            {
+                TASMod.Update();
+                orig(delta);
+            }
+            // And pause after that
+            Manager.NextState = Manager.State.Paused;
+        }
     }
 
     private delegate void orig_Input_Step();

@@ -14,6 +14,9 @@ public class InputController
 {
     public readonly List<InputFrame> Inputs = new();
     public readonly SortedDictionary<int, List<Command>> Commands = new();
+    public readonly SortedDictionary<int, FastForward> FastForwards = new();
+    // public readonly SortedDictionary<int, FastForward> FastForwardLabel = new();
+    // public readonly Dictionary<string, List<Comment>> Labels = new();
 
     private static readonly Dictionary<string, FileSystemWatcher> watchers = new();
     private readonly HashSet<string> usedFiles = new();
@@ -29,7 +32,12 @@ public class InputController
     public InputFrame? Previous => Inputs!.GetValueOrDefault(CurrentFrameInTas - 1);
     public InputFrame? Current => Inputs!.GetValueOrDefault(CurrentFrameInTas);
     public InputFrame? Next => Inputs!.GetValueOrDefault(CurrentFrameInTas + 1);
+
     public List<Command>? CurrentCommands => Commands.GetValueOrDefault(CurrentFrameInTas);
+    public FastForward? CurrentFastForward => FastForwards.FirstOrDefault(pair => pair.Key > CurrentFrameInTas).Value ??
+                                              FastForwards.LastOrDefault().Value;
+
+    public bool ShouldFastForward => CurrentFastForward is { } forward && forward.Frame > CurrentFrameInTas;
 
     public bool CanPlayback => CurrentFrameInTas < Inputs.Count;
     public bool NeedsToWait => Manager.IsLoading();
@@ -199,15 +207,16 @@ public class InputController
             //     return;
             // }
 
-            // if (lineText.StartsWith("***")) {
-            //     FastForward fastForward = new(initializationFrameCount, lineText.Substring(3), studioLine);
-            //     if (FastForwards.TryGetValue(initializationFrameCount, out FastForward oldFastForward) && oldFastForward.SaveState &&
-            //         !fastForward.SaveState) {
-            //         // ignore
-            //     } else {
-            //         FastForwards[initializationFrameCount] = fastForward;
-            //     }
-            // } else if (lineText.StartsWith("#")) {
+            // Breakpoints
+            if (lineText.StartsWith("***")) {
+                var fastForward = new FastForward(initializationFrameCount, lineText[3..], studioLine);
+                if (FastForwards.TryGetValue(initializationFrameCount, out var oldFastForward) && oldFastForward.SaveState && !fastForward.SaveState) {
+                    // ignore
+                } else {
+                    FastForwards[initializationFrameCount] = fastForward;
+                }
+            }
+            // else if (lineText.StartsWith("#")) {
             //     FastForwardComments[initializationFrameCount] = new FastForward(initializationFrameCount, "", studioLine);
             //     if (!Comments.TryGetValue(filePath, out var comments)) {
             //         Comments[filePath] = comments = new List<Comment>();
