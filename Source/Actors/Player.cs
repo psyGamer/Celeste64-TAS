@@ -132,8 +132,8 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
     private Vec3 velocity;
     private Vec3 previousVelocity;
     private Vec3 groundNormal;
-    private Vec3 platformVelocity;
-    private float tPlatformVelocityStorage;
+    public Vec3 platformVelocity; // TAS: publicized
+    public float tPlatformVelocityStorage; // TAS: publicized
     private float tGroundSnapCooldown;
     private Actor? climbingWallActor;
     private Vec3 climbingWallNormal;

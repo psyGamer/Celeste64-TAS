@@ -127,6 +127,17 @@ public static class InfoHUD
                 ImGui.Text(string.Empty);
 
                 List<string> statues = new();
+                if (player.tPlatformVelocityStorage > 0)
+                {
+                    Vec3 add = player.platformVelocity;
+
+                    add.Z = Calc.Clamp(add.Z, 0, 180);
+                    if (add.XY().LengthSquared() > 300 * 300)
+                        add = add.WithXY(add.XY().Normalized() * 300);
+
+                    statues.Add($"PlatformSpeed({add})");
+                }
+
                 if (player.tCoyote > 0)
                     statues.Add($"Coyote({player.tCoyote.ToFrames()})@{player.coyoteZ.ToFormattedString(Save.Instance.InfoHudDecimals)}");
                 if (player.tClimbCooldown > 0)
