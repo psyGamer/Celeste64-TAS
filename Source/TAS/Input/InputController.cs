@@ -1,3 +1,4 @@
+using Celeste64.TAS.Input.Commands;
 using Celeste64.TAS.Util;
 using System.Text;
 using TAS.Utils;
@@ -76,7 +77,7 @@ public class InputController
     public static string TasFilePath => string.IsNullOrEmpty(StudioTasFilePath) ? DefaultTasFilePath : StudioTasFilePath;
 
     private string checksum = string.Empty;
-    private string Checksum => string.IsNullOrEmpty(checksum) ? checksum = CalcChecksum(/*Inputs.Count - 1*/0) : checksum;
+    private string Checksum => string.IsNullOrEmpty(checksum) ? checksum = CalcChecksum(Inputs.Count - 1) : checksum;
 
     public void RefreshInputs() {
         if (!NeedsReload) return;
@@ -94,9 +95,9 @@ public class InputController
                 // } else {
                     NeedsReload = false;
                     ParseFileEnd();
-                    // if (!firstRun && lastChecksum != Checksum) {
-                    //     MetadataCommands.UpdateRecordCount(this);
-                    // }
+                    if (!firstRun && lastChecksum != Checksum) {
+                        MetadataCommands.IncrementRecordCount();
+                    }
                 // }
 
                 break;
@@ -353,20 +354,23 @@ public class InputController
         StringBuilder result = new(TasFilePath);
         result.AppendLine();
 
-        // int checkInputFrame = 0;
-        //
-        // while (checkInputFrame < toInputFrame) {
-        //     InputFrame currentInput = Inputs[checkInputFrame];
-        //     result.AppendLine(currentInput.ToActionsString());
-        //
-        //     if (Commands.GetValueOrDefault(checkInputFrame) is { } commands) {
-        //         foreach (Command command in commands.Where(command => command.Attribute.CalcChecksum)) {
-        //             result.AppendLine(command.LineText);
-        //         }
-        //     }
-        //
-        //     checkInputFrame++;
-        // }
+        int checkInputFrame = 0;
+
+        while (checkInputFrame < toInputFrame)
+        {
+            InputFrame currentInput = Inputs[checkInputFrame];
+            result.AppendLine(currentInput.ToString());
+
+            if (Commands.GetValueOrDefault(checkInputFrame) is { } commands)
+            {
+                foreach (Command command in commands.Where(command => command.Attribute.CalcChecksum))
+                {
+                    result.AppendLine(command.LineText);
+                }
+            }
+
+            checkInputFrame++;
+        }
 
         return HashHelper.ComputeHash(result.ToString());
     }

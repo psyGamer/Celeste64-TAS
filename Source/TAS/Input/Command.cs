@@ -122,6 +122,7 @@ public class CommandAttribute(string name) : Attribute
     public bool LegalInFullGame = true;
     public ExecuteTiming ExecuteTiming = ExecuteTiming.Runtime;
     public string[] Aliases = [];
+    public bool CalcChecksum = true;
 
     private static readonly Dictionary<CommandAttribute, MethodInfo> MethodInfos = new();
 
