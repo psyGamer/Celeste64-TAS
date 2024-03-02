@@ -50,7 +50,6 @@ public static class Manager
         CurrState = NextState = State.Running;
         AttributeUtils.Invoke<EnableRunAttribute>();
         Controller.Stop();
-        Controller.Clear();
         Controller.RefreshInputs();
 
         TASLevelRecord.ID = string.Empty;
