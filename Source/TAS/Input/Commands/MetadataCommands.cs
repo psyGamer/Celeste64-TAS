@@ -15,7 +15,7 @@ public static class MetadataCommands
         string timerStr = (int) Save.CurrentRecord.Time.TotalHours > 0
             ? $"{((int) Save.CurrentRecord.Time.TotalHours):00}:{Save.CurrentRecord.Time.Minutes:00}:{Save.CurrentRecord.Time.Seconds:00}:{Save.CurrentRecord.Time.Milliseconds:000}"
             : $"{Save.CurrentRecord.Time.Minutes:00}:{Save.CurrentRecord.Time.Seconds:00}:{Save.CurrentRecord.Time.Milliseconds:000}";
-        string timer = $"{timerStr}(({((float)Save.CurrentRecord.Time.TotalSeconds).ToFrames()}))";
+        string timer = $"{timerStr}({((float)Save.CurrentRecord.Time.TotalSeconds).ToFrames()})";
 
         UpdateAllMetadata("FileTime",
                           _ => timer,
