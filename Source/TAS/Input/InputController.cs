@@ -69,6 +69,7 @@ public class InputController
 
             // Preload tas file
             Manager.Controller.Stop();
+            Manager.Controller.Clear();
             Manager.Controller.RefreshInputs();
         }
     }
