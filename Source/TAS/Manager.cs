@@ -53,6 +53,8 @@ public static class Manager
         Controller.RefreshInputs();
 
         TASLevelRecord.ID = string.Empty;
+
+        Audio.dsp.setBypass(false);
     }
 
     public static void DisableRun()
@@ -63,6 +65,8 @@ public static class Manager
         NextState = State.Disabled;
         AttributeUtils.Invoke<DisableRunAttribute>();
         Controller.Stop();
+
+        Audio.dsp.setBypass(true);
     }
 
     public static void Update()

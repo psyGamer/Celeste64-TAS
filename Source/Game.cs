@@ -157,6 +157,9 @@ public class Game : Module
             return;
         }
 
+        // Allow for next audio frame
+        Audio.blockEnabled = false;
+
         // update top scene
         if (scenes.TryPeek(out var scene))
         {
