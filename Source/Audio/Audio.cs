@@ -1,5 +1,5 @@
-using Celeste64.TAS;
 using FMOD.Studio;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -9,7 +9,7 @@ public static class Audio
 {
 	private class Module : Foster.Framework.Module
 	{
-		public override void Update()
+		public override void Update() 
 			=> Audio.Update();
 
 		public override void Shutdown()
@@ -20,9 +20,6 @@ public static class Audio
 	private static readonly List<Bank> banks = [];
 	private static readonly Dictionary<string, FMOD.GUID> events = [];
 	private static readonly Dictionary<string, FMOD.GUID> buses = [];
-
-    private static FMOD.ChannelGroup masterChannelGroup;
-    internal static FMOD.DSP dsp;
 
 	public static void Init()
 	{
@@ -53,71 +50,8 @@ public static class Audio
 		// Initialize FMOD
 		Check(system.initialize(1024, studioFlags, flags, IntPtr.Zero));
 
-        var desc = default(FMOD.DSP_DESCRIPTION);
-        desc.version = 0x00010000;
-        desc.numinputbuffers = 1;
-        desc.numoutputbuffers = 1;
-        desc.read = BlockCallback;
-
-        core.getMasterChannelGroup(out masterChannelGroup);
-        core.createDSP(ref desc, out dsp);
-        masterChannelGroup.addDSP(0, dsp);
-        dsp.setBypass(true);
-
 		App.Register<Module>();
 	}
-
-    // Theoretical perfect amount of samples per frame
-    private const int TargetRecordedSamples = 48000 / 60;
-    // Blocks the FMOD thread.
-    internal static bool blockEnabled = false;
-    // The accumulated overhead, since audio chunks contain more data than 1 frame.
-    private static int totalRecodedSamplesError = 0;
-    // Actual amount of samples which were blocked
-    private static int recordedSamples = 0;
-
-    private static unsafe FMOD.RESULT BlockCallback(ref FMOD.DSP_STATE dspState, IntPtr inBuffer, IntPtr outBuffer, uint samples, int inChannels, ref int outChannels) {
-        float* src = (float*) inBuffer;
-        float* dst = (float*) outBuffer;
-
-        if (inChannels == outChannels) {
-            NativeMemory.Copy(src, dst, (nuint) (inChannels * samples * Marshal.SizeOf<float>()));
-        } else if (inChannels > outChannels) {
-            // Cut the remaining channels off
-            for (int sample = 0; sample < samples; sample++) {
-                NativeMemory.Copy(src + sample * inChannels, dst + sample * outChannels, (nuint) (outChannels * Marshal.SizeOf<float>()));
-            }
-        } else {
-            // Repeat the last channel to fill the remaining ones
-            for (int sample = 0; sample < samples; sample++) {
-                NativeMemory.Copy(src + sample * inChannels, dst + sample * outChannels, (nuint) (inChannels * Marshal.SizeOf<float>()));
-                for (int channel = inChannels; channel < outChannels; channel++) {
-                    dst![sample * outChannels + channel] = src![sample * inChannels + inChannels - 1];
-                }
-            }
-        }
-
-        recordedSamples += (int) samples;
-
-        // Skip a frame to let the video catch up again
-        if (totalRecodedSamplesError >= TargetRecordedSamples) {
-            totalRecodedSamplesError -= TargetRecordedSamples;
-            recordedSamples = 0;
-            return FMOD.RESULT.OK;
-        }
-
-        if (recordedSamples >= TargetRecordedSamples)
-            blockEnabled = true;
-
-        // Block until the TAS allows resuming. (also blocks the main FMOD thread which is good, since it avoid artifacts)
-        while (blockEnabled && Manager.Running) { }
-
-        // Account for overshooting
-        totalRecodedSamplesError += recordedSamples - TargetRecordedSamples;
-        recordedSamples = 0;
-
-        return FMOD.RESULT.OK;
-    }
 
 	private static bool isResolverSet = false;
 
@@ -127,11 +61,11 @@ public static class Audio
 			return;
 		isResolverSet = true;
 
-		var path
-			=  Path.GetDirectoryName(AppContext.BaseDirectory)
+		var path 
+			=  Path.GetDirectoryName(AppContext.BaseDirectory) 
 			?? Directory.GetCurrentDirectory();
 
-		NativeLibrary.SetDllImportResolver(typeof(FMOD.Studio.System).Assembly,
+		NativeLibrary.SetDllImportResolver(typeof(FMOD.Studio.System).Assembly, 
 			(name, assembly, dllImportSearchPath) =>
 			{
 				name = Path.GetFileNameWithoutExtension(name);
@@ -276,7 +210,7 @@ public static class Audio
 			Log.Warning($"Failed to create Audio Event Instance: {result}");
 			return new AudioHandle();
 		}
-
+		
 		return new AudioHandle(instance);
 	}
 
