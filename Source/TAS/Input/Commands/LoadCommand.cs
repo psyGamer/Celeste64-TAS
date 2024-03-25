@@ -47,7 +47,7 @@ public class LoadCommand
 
         if (!float.TryParse(args[2], out float targetFacing))
         {
-            Manager.AbortTas($"Couldn't parse facing direction '{args[3]}'");
+            Manager.AbortTas($"Couldn't parse facing direction '{args[2]}'");
             return;
         }
 
@@ -88,6 +88,73 @@ public class LoadCommand
                 player.Position = strawb.Position + Vec3.UnitZ * -3;
                 player.Facing = player.targetFacing = new Vec2(MathF.Sin(targetFacing * Calc.DegToRad), -MathF.Cos(targetFacing * Calc.DegToRad));
                 Manager.TASLevelRecord.Strawberries.Add(strawbID);
+
+                return world;
+            },
+            ToBlack = null,
+            FromBlack = new SpotlightWipe(),
+        });
+    }
+
+    [Command("LoadCassette", LegalInFullGame = false)]
+    private static void LoadCassetteCmd(string[] args)
+    {
+        if (args.Length != 3)
+        {
+            Manager.AbortTas("Level, Cassette IDs and Facing direction are required for the LoadCassette command");
+            return;
+        }
+
+        string cassetteMap = args[1];
+
+        if (!float.TryParse(args[2], out float targetFacing))
+        {
+            Manager.AbortTas($"Couldn't parse facing direction '{args[3]}'");
+            return;
+        }
+
+        var entry = new World.EntryInfo()
+        {
+            Map = args[0],
+            CheckPoint = "Start", // Doesnt matter anyway
+            Submap = false, // TODO
+            Reason = World.EntryReasons.Entered,
+        };
+
+        // We need to change the current scene to the main menu,
+        // since otherwise an input on the first frame would get consumed by the previous scene.
+        if (Game.Instance.scenes.TryPop(out _))
+        {
+            Game.Instance.scenes.Push(new Overworld(true));
+        }
+
+        Game.Instance.Goto(new Transition()
+        {
+            Mode = Transition.Modes.Replace,
+            Scene = () =>
+            {
+                var world = new World(entry);
+
+                // We need to search through 'adding', since they'll only get properly added on the first update call.
+                if (!world.adding.TryFirst(actor => actor is Player, out var playerActor) || playerActor is not Player player)
+                {
+                    Manager.AbortTas($"Couldn't find player");
+                    return world;
+                }
+                if (!world.adding.TryFirst(actor => actor is Cassette c && c.Map == cassetteMap, out var cassette))
+                {
+                    Manager.AbortTas($"Couldn't parse cassette ID '{cassetteMap}'");
+                    return world;
+                }
+
+                player.Position = cassette.Position - Vec3.UnitZ * 3;
+                player.velocity = Vec3.UnitZ * 25;
+                player.holdJumpSpeed = player.velocity.Z;
+                player.tHoldJump = .1f;
+                player.autoJump = true;
+
+                player.Facing = player.targetFacing = new Vec2(MathF.Sin(targetFacing * Calc.DegToRad), -MathF.Cos(targetFacing * Calc.DegToRad));
+                Manager.TASLevelRecord.CompletedSubMaps.Add(cassetteMap);
 
                 return world;
             },

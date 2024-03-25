@@ -129,7 +129,7 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
     public Vec3 Velocity => velocity;
     public Vec3 PreviousVelocity => previousVelocity;
 
-    private Vec3 velocity;
+    public Vec3 velocity; // TAS: publicized
     private Vec3 previousVelocity;
     private Vec3 groundNormal;
     public Vec3 platformVelocity; // TAS: publicized
@@ -1043,9 +1043,9 @@ public class Player : Actor, IHaveModels, IHaveSprites, IRidePlatforms, ICastPoi
 
     private const float FootstepInterval = .3f;
 
-    private float tHoldJump;
-    private float holdJumpSpeed;
-    private bool autoJump;
+    public float tHoldJump; // TAS: publicized
+    public float holdJumpSpeed; // TAS: publicized
+    public bool autoJump; // TAS: publicized
     private float tNoMove;
     private float tFootstep;
 
