@@ -124,6 +124,13 @@ public static class InfoHUD
                     ImGui.Text($"Vel: {player.Velocity.X.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Y.ToFormattedString(Save.Instance.InfoHudDecimals)} {player.Velocity.Z.ToFormattedString(Save.Instance.InfoHudDecimals)}");
                 else
                     ImGui.Text($"Vel: {((player.Position.X - lastPlayerPosition.Value.X) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)} {((player.Position.Y - lastPlayerPosition.Value.Y) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)} {((player.Position.Z - lastPlayerPosition.Value.Z) / Time.Delta).ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                if (player.Velocity.XY() == Vec2.Zero)
+                    ImGui.Text($"SpdAngle:     N/A");
+                else
+                    ImGui.Text($"SpdAngle:     {Modulo(player.Velocity.XY().Angle() * Calc.RadToDeg + 90.0f, 360.0f).ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                ImGui.Text($"Facing:       {Modulo(player.Facing.Angle() * Calc.RadToDeg + 90.0f, 360.0f).ToFormattedString(Save.Instance.InfoHudDecimals)}");
+                ImGui.Text($"TargetFacing: {Modulo(player.targetFacing.Angle() * Calc.RadToDeg + 90.0f, 360.0f).ToFormattedString(Save.Instance.InfoHudDecimals)}");
+
                 ImGui.Text(string.Empty);
 
                 List<string> statues = new();
@@ -195,5 +202,11 @@ public static class InfoHUD
     public static int ToFrames(this float seconds)
     {
         return (int) Math.Ceiling(seconds / Time.Delta);
+    }
+
+    // :screwms: moment
+    public static float Modulo(float a, float b)
+    {
+        return (a % b + b) % b;
     }
 }
